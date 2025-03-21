@@ -1,0 +1,6 @@
+title,description,color,user_id,client_id,start_at,end_at
+Réunion découverte,Premier contact avec le client pour définir les besoins,#3498db,1,1,2023-06-01 10:00:00,2023-06-01 11:30:00
+Présentation prototype,Démonstration du prototype initial,#2ecc71,2,2,2023-06-03 14:00:00,2023-06-03 15:00:00
+Revue de projet,Point d'étape sur l'avancement du projet,#e74c3c,3,3,2023-06-05 09:30:00,2023-06-05 11:00:00
+Formation utilisateurs,Formation sur le nouveau logiciel,#f39c12,1,4,2023-06-07 13:00:00,2023-06-07 17:00:00
+Réunion de clôture,Bilan final et signature des documents,#9b59b6,2,5,2023-06-10 15:30:00,2023-06-10 16:30:00 

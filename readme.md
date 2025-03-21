@@ -40,6 +40,7 @@ And i will keep creating new features, releases, keep support running, and fix i
 - Global search
 - Client overview
 - Upload documents, and keep track of client documents
+- Import CSV data into any database table (`php artisan csv:import`, voir [documentation](resources/docs/cmd/csv_import_command.md))
 - And many more, for more detailed features overview go to daybydaycrm.com/pricing
 
 ### Get started

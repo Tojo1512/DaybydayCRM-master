@@ -20,7 +20,7 @@ class UsersTableSeeder extends Seeder
             array(
                 'id' => 1,
                 'external_id' => Uuid::uuid4(),
-                'name' => 'Admin',
+                'name' => 'Administrator',
                 'email' => 'admin@admin.com',
                 'password' => bcrypt('admin123'),
                 'address' => '',

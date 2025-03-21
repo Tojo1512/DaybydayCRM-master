@@ -64,3 +64,28 @@ if (! function_exists('formatMoney')) {
         return app(\App\Repositories\Money\MoneyConverter::class, ['money' => $amount])->format($useCode);
     }
 }
+
+if (! function_exists('importCsv')) {
+    /**
+     * Importe un fichier CSV dans la base de données
+     *
+     * @param string $tableName Nom de la table dans la base de données
+     * @param string $csvFilePath Chemin du fichier CSV à importer
+     * @param array|null $csvColumns Ordre des colonnes dans le fichier CSV (facultatif si le fichier a un en-tête)
+     * @param array|null $tableColumns Ordre des colonnes dans la table (facultatif si le fichier a un en-tête)
+     * @param string $delimiter Délimiteur du fichier CSV (par défaut ",")
+     * @param bool $hasHeader Si le fichier contient une ligne d'en-tête (par défaut true)
+     * @return array Résultat de l'importation
+     */
+    function importCsv(
+        string $tableName,
+        string $csvFilePath,
+        ?array $csvColumns = null,
+        ?array $tableColumns = null,
+        string $delimiter = ',',
+        bool $hasHeader = true
+    ): array {
+        return app(\App\Services\CsvImport\CsvImportService::class)
+            ->importCsv($tableName, $csvFilePath, $csvColumns, $tableColumns, $delimiter, $hasHeader);
+    }
+}

@@ -1,0 +1,6 @@
+city,vat,client_number,zipcode,company_name,user_id,external_id,address,industry_id
+"Paris",FR12345678901,10001,"75001",Entreprise ABC,1,ext-001,"123 Rue de Paris",1
+"Lyon",FR98765432109,10002,"69002",Société XYZ,1,ext-002,"45 Avenue Victor Hugo",1
+"Bordeaux",FR56789123456,10003,"33000",Tech Solutions,1,ext-003,"8 Boulevard de la République",1
+"Lille",FR61234567890,10004,"59000",Boutique Élégance,1,ext-004,"22 Rue du Commerce",1
+"Nantes",FR45678912345,10005,"44000",Groupe Innov,1,ext-005,"17 Place Centrale",1 
