@@ -48,10 +48,9 @@ class Kernel extends HttpKernel
         'filesystem.is.enabled' => [ \App\Http\Middleware\RedirectIfFileSystemIsNotEnabled::class],
         'is.demo' => [ \App\Http\Middleware\RedirectIfDemo::class],
         'api' => [
-            'auth:api',
             'throttle:60,1',
             'bindings',
-
+            \Illuminate\Session\Middleware\StartSession::class,
         ],
 
     ];
@@ -70,5 +69,6 @@ class Kernel extends HttpKernel
         'can' => \Illuminate\Auth\Middleware\Authorize::class,
         'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
+        'api.token' => \App\Http\Middleware\ApiTokenMiddleware::class,
     ];
 }
