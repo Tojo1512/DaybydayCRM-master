@@ -65,8 +65,10 @@ class LoginController extends Controller
             // Connexion réussie
             $user = $this->guard()->user();
             
-            // Générer un API token simple (via un champ unique dans la session)
+            // Générer un API token simple
             $apiToken = Str::random(60);
+            
+            // Stocker ce token dans la session pour qu'il soit persistant
             session(['api_token' => $apiToken]);
             
             return response()->json([

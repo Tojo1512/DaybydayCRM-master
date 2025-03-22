@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Auth\LoginController;
+use App\Api\v1\Controllers\DashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -22,6 +23,9 @@ Route::group(['namespace' => 'App\Api\v1\Controllers'], function () {
     Route::group(['middleware' => 'api.token'], function () {
         Route::get('users', ['uses' => 'UserController@index']);
         
-        // Ajoutez ici d'autres routes API protégées
+        // Routes du dashboard
+        Route::get('dashboard', [DashboardController::class, 'getSummary']);
+        Route::get('dashboard/stats', [DashboardController::class, 'getStats']);
+        Route::get('dashboard/offers', [DashboardController::class, 'getOffers']);
     });
 });
