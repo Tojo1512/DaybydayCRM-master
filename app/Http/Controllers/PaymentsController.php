@@ -11,7 +11,7 @@ use Carbon\Carbon;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Ramsey\Uuid\Uuid;
-
+use App\Services\Invoice\InvoiceCalculator;
 class PaymentsController extends Controller
 {
     /**
@@ -54,6 +54,11 @@ class PaymentsController extends Controller
             return redirect()->route('invoices.show', $invoice->external_id);
         }
 
+        //Mi verifier hoe mihaotra amin'ny paiement
+        if(app(InvoiceCalculator::class, ['invoice' => $invoice])->isPaymentExceedingAmount($request->amount)) {
+            session()->flash('flash_message_warning', __("The payment amount cannot exceed the amount due on the invoice"));
+            return redirect()->route('invoices.show', $invoice->external_id);
+        }
         $payment = Payment::create([
             'external_id' => Uuid::uuid4()->toString(),
             'amount' => $request->amount * 100,

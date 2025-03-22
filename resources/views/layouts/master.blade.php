@@ -47,7 +47,7 @@
     <div class="btn-group">
         <button type="button" class="data-tools-btn btn dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <i class="fa fa-database"></i> Gestion des données
-        </button>
+    </button>
         <div class="dropdown-menu dropdown-menu-right">
             <a class="dropdown-item reset-item" href="#" data-toggle="modal" data-target="#resetDataModal">
                 <i class="fa fa-refresh"></i> Réinitialiser les données
@@ -76,9 +76,9 @@
                     </div>
                     <div class="form-group">
                         <label for="specificTables">Tables spécifiques (optionnel):</label>
-                        <input type="text" class="form-control" id="specificTables" placeholder="Ex: clients,tasks,invoices">
+                            <input type="text" class="form-control" id="specificTables" placeholder="Ex: clients,tasks,invoices">
                         <small class="text-muted">Laissez vide pour réinitialiser toutes les tables</small>
-                    </div>
+                        </div>
                     <div class="alert alert-warning">
                         <i class="fa fa-warning"></i> <strong>Attention :</strong> Cette action va réinitialiser les données de la base en utilisant <code>php artisan reset:data</code>.
                     </div>
@@ -558,7 +558,7 @@ $(document).ready(function() {
             $('#resetError').text('Veuillez entrer le mot de passe.').show();
             return;
         }
-
+        
         // Afficher un message d'information pendant le traitement
         $('#resetInfo').text('Réinitialisation en cours... Veuillez patienter.').show();
         
@@ -633,18 +633,18 @@ $(document).ready(function() {
         $('#confirmGenerate').prop('disabled', true).text('Traitement en cours...');
 
         // Envoyer la requête AJAX
-        $.ajax({
+            $.ajax({
             url: '/execute-generate',
             type: 'POST',
-            data: { 
-                password: password,
+                data: {
+                    password: password,
                 table: table,
                 count: count
             },
             headers: {
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            },
-            success: function(response) {
+                },
+                success: function(response) {
                 // Fermer le modal de confirmation
                 $('#generateDataModal').modal('hide');
                 

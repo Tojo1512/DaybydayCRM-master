@@ -26,6 +26,12 @@ class InvoiceCalculator
         $this->invoice = $invoice;
     }
 
+    public function isPaymentExceedingAmount(float $paymentAmount): bool
+    {
+        $amountDue = $this->getAmountDue()->getAmount() / 100; // Conversion en format décimal
+        return $paymentAmount > $amountDue;
+    }
+
     public function getVatTotal()
     {
         $price = $this->getSubTotal()->getAmount();
