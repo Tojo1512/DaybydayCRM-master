@@ -12,6 +12,9 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Ramsey\Uuid\Uuid;
 use App\Services\Invoice\InvoiceCalculator;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Auth;
+
 class PaymentsController extends Controller
 {
     /**
@@ -33,7 +36,7 @@ class PaymentsController extends Controller
      */
     public function destroy(Payment $payment)
     {
-        if (!auth()->user()->can('payment-delete')) {
+        if (!Illuminate\Support\Facades\Auth::user()->can('payment-delete')) {
             session()->flash('flash_message', __("You don't have permission to delete a payment"));
             return redirect()->back();
         }
@@ -53,12 +56,20 @@ class PaymentsController extends Controller
             session()->flash('flash_message_warning', __("Can't add payment on Invoice"));
             return redirect()->route('invoices.show', $invoice->external_id);
         }
-
-        //Mi verifier hoe mihaotra amin'ny paiement
-        if(app(InvoiceCalculator::class, ['invoice' => $invoice])->isPaymentExceedingAmount($request->amount)) {
-            session()->flash('flash_message_warning', __("The payment amount cannot exceed the amount due on the invoice"));
-            return redirect()->route('invoices.show', $invoice->external_id);
+        
+        $isExceeding = app(InvoiceCalculator::class, ['invoice' => $invoice])->isPaymentExceedingAmount($request->amount);
+        
+        // Si le montant dépasse mais que l'utilisateur a confirmé, on procède
+        if ($isExceeding && !$request->has('confirm_exceeding')) {
+            // Stocker les données du formulaire en session pour les récupérer après confirmation
+            session(['payment_data' => $request->all()]);
+            
+            return redirect()->route('invoices.show', $invoice->external_id)
+                ->with('show_exceeding_modal', true)
+                ->with('amount_due', app(InvoiceCalculator::class, ['invoice' => $invoice])->getAmountDue()->getAmount() / 100)
+                ->with('payment_amount', $request->amount);
         }
+
         $payment = Payment::create([
             'external_id' => Uuid::uuid4()->toString(),
             'amount' => $request->amount * 100,
@@ -67,6 +78,7 @@ class PaymentsController extends Controller
             'description' => $request->description,
             'invoice_id' => $invoice->id
         ]);
+        
         $api = Integration::initBillingIntegration();
         if ($api && $invoice->integration_invoice_id) {
             $result = $api->createPayment($payment);
@@ -78,5 +90,39 @@ class PaymentsController extends Controller
 
         session()->flash('flash_message', __('Payment successfully added'));
         return redirect()->back();
+    }
+    
+    public function confirmExceedingPayment(Request $request, Invoice $invoice)
+    {
+        // Récupérer les données du paiement stockées en session
+        $paymentData = session('payment_data');
+        if (!$paymentData) {
+            return redirect()->route('invoices.show', $invoice->external_id);
+        }
+        
+        // Ajouter directement les données de paiement dans la base de données
+        $payment = Payment::create([
+            'external_id' => Uuid::uuid4()->toString(),
+            'amount' => $paymentData['amount'] * 100,
+            'payment_date' => Carbon::parse($paymentData['payment_date']),
+            'payment_source' => $paymentData['source'],
+            'description' => $paymentData['description'] ?? '',
+            'invoice_id' => $invoice->id
+        ]);
+        
+        $api = Integration::initBillingIntegration();
+        if ($api && $invoice->integration_invoice_id) {
+            $result = $api->createPayment($payment);
+            $payment->integration_payment_id = $result["Guid"];
+            $payment->integration_type = get_class($api);
+            $payment->save();
+        }
+        app(GenerateInvoiceStatus::class, ['invoice' => $invoice])->createStatus();
+        
+        // Nettoyer la session
+        session()->forget('payment_data');
+        
+        session()->flash('flash_message', __('Payment successfully added'));
+        return redirect()->route('invoices.show', $invoice->external_id);
     }
 }

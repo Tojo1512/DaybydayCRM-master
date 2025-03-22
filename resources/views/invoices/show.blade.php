@@ -273,6 +273,11 @@
 @push('scripts')
     <script type="text/javascript">
         $(document).ready(function () {
+            // Afficher le modal de confirmation si nécessaire
+            @if(session('show_exceeding_modal'))
+                $('#exceeding-payment-confirm-modal').modal('show');
+            @endif
+            
             if($('#sendMailCheckbox').val() == ""){
                 $('#sendMailBox').hide();
             }
@@ -302,3 +307,28 @@
         });
     </script>
 @endpush
+
+<!-- Ajouter le modal de confirmation pour les paiements excédentaires -->
+<div class="modal fade" id="exceeding-payment-confirm-modal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content" style="padding:2em;">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title">{{ __('Payment exceeds amount due') }}</h4>
+            </div>
+            <div class="modal-body">
+                <p>{{ __('The payment amount') }} ({{ session('payment_amount') }}) {{ __('exceeds the amount due on the invoice') }} ({{ session('amount_due') }}).</p>
+                <p>{{ __('Do you want to proceed with this payment?') }}</p>
+            </div>
+            <div class="modal-footer">
+                <form action="{{ route('payments.confirm-exceeding', $invoice->external_id) }}" method="POST">
+                    {{ csrf_field() }}
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">{{ __('Cancel') }}</button>
+                    <button type="submit" class="btn btn-primary">{{ __('Proceed with payment') }}</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

@@ -230,6 +230,8 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/', 'AbsenceController@store')->name('absence.store');
         Route::delete('/{absence}', 'AbsenceController@destroy')->name('absence.destroy');
     });
+
+    Route::post('/invoices/{invoice}/confirm-exceeding-payment', 'PaymentsController@confirmExceedingPayment')->name('payments.confirm-exceeding');
 });
 
 Route::group(['middleware' => ['auth']], function () {
