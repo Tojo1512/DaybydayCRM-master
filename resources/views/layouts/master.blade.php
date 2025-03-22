@@ -42,19 +42,28 @@
 
 <div id="wrapper">
 
-<!-- Bouton Reset:Data flottant -->
-<div class="reset-data-container">
-    <button type="button" class="btn btn-danger reset-data-btn" data-toggle="modal" data-target="#resetDataModal">
-        <i class="fa fa-refresh"></i>
-    </button>
-    <div class="reset-data-label">Reset Data</div>
+<!-- Bouton flottant pour la gestion des données -->
+<div class="data-tools-container">
+    <div class="btn-group">
+        <button type="button" class="data-tools-btn btn dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="fa fa-database"></i> Gestion des données
+        </button>
+        <div class="dropdown-menu dropdown-menu-right">
+            <a class="dropdown-item reset-item" href="#" data-toggle="modal" data-target="#resetDataModal">
+                <i class="fa fa-refresh"></i> Réinitialiser les données
+            </a>
+            <a class="dropdown-item generate-item" href="#" data-toggle="modal" data-target="#generateDataModal">
+                <i class="fa fa-plus-circle"></i> Générer des données
+            </a>
+        </div>
+    </div>
 </div>
 
 <!-- Modal pour confirmer la réinitialisation -->
 <div class="modal fade" id="resetDataModal" tabindex="-1" role="dialog" aria-labelledby="resetDataModalLabel">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header modal-header-danger">
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                 <h4 class="modal-title" id="resetDataModalLabel">Réinitialisation des données</h4>
             </div>
@@ -62,47 +71,16 @@
                 <form id="resetDataForm">
                     <div class="form-group">
                         <label for="resetPassword">Mot de passe:</label>
-                        <input type="password" class="form-control" id="resetPassword" placeholder="Entrez le mot de passe">
+                        <input type="password" class="form-control" id="resetPassword" placeholder="Entrez le mot de passe" value="admin123">
+                        <small class="text-muted">Le mot de passe par défaut est "admin123"</small>
                     </div>
                     <div class="form-group">
-                        <label>Options de réinitialisation:</label>
-                        <div class="radio">
-                            <label>
-                                <input type="radio" name="resetMode" id="resetModeDefault" value="default" checked>
-                                <strong>Standard</strong> - Vide toutes les tables mais conserve la structure de la base de données
-                            </label>
-                        </div>
-                        <div class="radio">
-                            <label>
-                                <input type="radio" name="resetMode" id="resetModeErase" value="erase">
-                                <strong class="text-danger">Effacer et recréer</strong> - Supprime et recrée toute la structure de la base de données (--erase)
-                            </label>
-                        </div>
-                        <hr>
-                        <div class="checkbox">
-                            <label>
-                                <input type="checkbox" id="demoData" > Inclure les données de démonstration (--demo)
-                            </label>
-                            <p class="help-block">Ajoute les données démonstration après la réinitialisation</p>
-                        </div>
-                        <div class="checkbox">
-                            <label>
-                                <input type="checkbox" id="dummyData"> Inclure des données fictives supplémentaires (--dummy)
-                            </label>
-                            <p class="help-block">Ajoute des données fictives additionnelles après la réinitialisation</p>
-                        </div>
-                        <hr>
-                        <div class="form-group">
-                            <label for="specificTables">Tables spécifiques à réinitialiser (optionnel):</label>
-                            <input type="text" class="form-control" id="specificTables" placeholder="Ex: clients,tasks,invoices">
-                            <p class="help-block">Liste des tables à vider séparées par des virgules. Laissez vide pour réinitialiser toutes les tables.</p>
-                        </div>
-                        <div class="checkbox">
-                            <label>
-                                <input type="checkbox" id="forceData" checked disabled> Forcer l'opération sans confirmation (--force)
-                            </label>
-                            <p class="help-block">Cette option est toujours activée pour l'interface</p>
-                        </div>
+                        <label for="specificTables">Tables spécifiques (optionnel):</label>
+                        <input type="text" class="form-control" id="specificTables" placeholder="Ex: clients,tasks,invoices">
+                        <small class="text-muted">Laissez vide pour réinitialiser toutes les tables</small>
+                    </div>
+                    <div class="alert alert-warning">
+                        <i class="fa fa-warning"></i> <strong>Attention :</strong> Cette action va réinitialiser les données de la base en utilisant <code>php artisan reset:data</code>.
                     </div>
                     <div id="resetError" class="alert alert-danger" style="display: none;"></div>
                     <div id="resetInfo" class="alert alert-info" style="display: none;"></div>
@@ -116,39 +94,78 @@
     </div>
 </div>
 
-<!-- Modal pour afficher les résultats de la réinitialisation -->
-<div class="modal fade" id="resetResultModal" tabindex="-1" role="dialog" aria-labelledby="resetResultModalLabel">
+<!-- Modal pour afficher le résultat de l'opération -->
+<div class="modal fade" id="resetResultModal" tabindex="-1" role="dialog" aria-labelledby="resetResultModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                <h4 class="modal-title" id="resetResultModalLabel">Résultat de la réinitialisation</h4>
+            <div class="modal-header" id="resultModalHeader">
+                <h5 class="modal-title" id="resetResultModalLabel">Résultat de l'opération</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
             <div class="modal-body">
-                <div class="alert alert-success">
-                    <i class="fa fa-check-circle"></i> La réinitialisation des données a été effectuée avec succès.
+                <div class="alert" id="resultAlertBox">
+                    <i class="fa fa-info-circle"></i> <span id="resultMessage">L'opération a été exécutée avec succès.</span>
                 </div>
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <h3 class="panel-title">Mode de réinitialisation</h3>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Détails de l'exécution</h3>
                     </div>
-                    <div class="panel-body">
-                        <ul id="resetOptionsList" class="list-group">
-                            <!-- Liste des options utilisées, remplie dynamiquement -->
-                        </ul>
-                    </div>
-                </div>
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <h3 class="panel-title">Détails de l'opération</h3>
-                    </div>
-                    <div class="panel-body">
+                    <div class="card-body">
                         <pre id="resetResultOutput" style="max-height: 300px; overflow-y: auto; background-color: #f5f5f5; padding: 10px; border-radius: 4px;"></pre>
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-success" data-dismiss="modal" onclick="location.reload();">Fermer et rafraîchir</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour la génération de données -->
+<div class="modal fade" id="generateDataModal" tabindex="-1" role="dialog" aria-labelledby="generateDataModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header modal-header-success">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="generateDataModalLabel">Génération de données</h4>
+            </div>
+            <div class="modal-body">
+                <form id="generateDataForm">
+                    <div class="form-group">
+                        <label for="genPassword">Mot de passe:</label>
+                        <input type="password" class="form-control" id="genPassword" placeholder="Entrez le mot de passe" value="admin123">
+                        <small class="text-muted">Le mot de passe par défaut est "admin123"</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="genTable">Table:</label>
+                        <select class="form-control" id="genTable">
+                            <option value="all">Toutes les tables</option>
+                            <option value="users">Utilisateurs</option>
+                            <option value="clients">Clients</option>
+                            <option value="tasks">Tâches</option>
+                            <option value="leads">Prospects</option>
+                            <option value="projects">Projets</option>
+                            <option value="invoices">Factures</option>
+                            <option value="products">Produits</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="genCount">Nombre d'enregistrements:</label>
+                        <input type="number" class="form-control" id="genCount" value="10" min="1" max="100">
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fa fa-info-circle"></i> Cette fonction va générer des données de test pour la table sélectionnée.
+                    </div>
+                    <div id="genError" class="alert alert-danger" style="display: none;"></div>
+                    <div id="genInfo" class="alert alert-info" style="display: none;"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-success" id="confirmGenerate">Générer</button>
             </div>
         </div>
     </div>
@@ -353,7 +370,7 @@
     window.trans = <?php
     // copy all translations from /resources/lang/CURRENT_LOCALE/* to global JS variable
     try {
-        $filename = File::get(resource_path() . '/lang/' . App::getLocale() . '.json');
+        $filename = \Illuminate\Support\Facades\File::get(resource_path() . '/lang/' . \Illuminate\Support\Facades\App::getLocale() . '.json');
     } catch (\Illuminate\Contracts\Filesystem\FileNotFoundException $e) {
         return;
     }
@@ -409,12 +426,97 @@
     text-shadow: 1px 1px 1px rgba(0,0,0,0.2);
 }
 
-.checkbox {
-    margin-top: 10px;
+/* Nouveau style pour le bouton d'outils de données */
+.data-tools-container {
+    position: fixed;
+    right: 20px;
+    top: 70px;
+    z-index: 9999;
 }
 
-.modal-header {
-    background-color: #d9534f;
+.data-tools-btn {
+    border-radius: 4px;
+    width: auto;
+    height: auto;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    padding: 8px 16px;
+    background-color: #3498db;
+    border: 2px solid #fff;
+    transition: all 0.3s ease;
+    color: white;
+    font-weight: bold;
+}
+
+.data-tools-btn:hover, .data-tools-btn:focus, .data-tools-btn:active {
+    transform: scale(1.05);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+    background-color: #2980b9;
+}
+
+.data-tools-btn i {
+    margin-right: 8px;
+}
+
+.data-tools-container .dropdown-menu {
+    margin-top: 10px;
+    border-radius: 6px;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+    border: none;
+    padding: 0;
+    overflow: hidden;
+    min-width: 220px;
+}
+
+.data-tools-container .dropdown-item {
+    padding: 12px 15px;
+    color: #333;
+    transition: all 0.2s ease;
+    border-left: 4px solid transparent;
+}
+
+.data-tools-container .dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+.data-tools-container .dropdown-item.reset-item {
+    border-left-color: #e74c3c;
+}
+
+.data-tools-container .dropdown-item.generate-item {
+    border-left-color: #2ecc71;
+}
+
+.data-tools-container .dropdown-item.reset-item:hover {
+    background-color: #ffeeee;
+}
+
+.data-tools-container .dropdown-item.generate-item:hover {
+    background-color: #eeffee;
+}
+
+.data-tools-container .dropdown-item i {
+    margin-right: 10px;
+    font-size: 16px;
+}
+
+.data-tools-container .dropdown-item.reset-item i {
+    color: #e74c3c;
+}
+
+.data-tools-container .dropdown-item.generate-item i {
+    color: #2ecc71;
+}
+
+/* Style pour les modals */
+.modal-header-danger {
+    background-color: #e74c3c;
+    color: white;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+}
+
+.modal-header-success {
+    background-color: #2ecc71;
     color: white;
     border-top-left-radius: 5px;
     border-top-right-radius: 5px;
@@ -423,6 +525,14 @@
 .modal-header .close {
     color: white;
     opacity: 0.8;
+}
+
+.btn-danger {
+    background-color: #e74c3c;
+}
+
+.btn-success {
+    background-color: #2ecc71;
 }
 
 .modal-footer {
@@ -434,134 +544,138 @@
 
 <script>
 $(document).ready(function() {
-    // Gestionnaire de clic pour le bouton de confirmation de réinitialisation
-    $('#confirmReset').on('click', function() {
-        const password = $('#resetPassword').val();
-        const erase = $('#resetModeErase').is(':checked');
-        const demo = $('#demoData').is(':checked');
-        const dummy = $('#dummyData').is(':checked');
-        const tables = $('#specificTables').val().trim();
-        
-        console.log('Mode de réinitialisation:', 
-            erase ? 'ERASE (Effacer et recréer)' : 'STANDARD (Conserver structure)', 
-            '- Valeur erase:', erase);
-        
-        // Validation du mot de passe
+    // Gestion de la réinitialisation des données
+    $('#confirmReset').click(function() {
+        var password = $('#resetPassword').val();
+        var specificTables = $('#specificTables').val();
+
+        // Réinitialiser les messages d'erreur
+        $('#resetError').hide();
+        $('#resetInfo').hide();
+
+        // Vérifier que le mot de passe est entré
         if (!password) {
-            $('#resetError').text('Le mot de passe est requis.').show();
+            $('#resetError').text('Veuillez entrer le mot de passe.').show();
             return;
         }
+
+        // Afficher un message d'information pendant le traitement
+        $('#resetInfo').text('Réinitialisation en cours... Veuillez patienter.').show();
         
-        $('#resetError').hide();
-        
-        let confirmMessage = "📣 CONFIRMATION DE RÉINITIALISATION DE LA BASE DE DONNÉES 📣\n\n";
-        
-        if (erase) {
-            confirmMessage += "⚠️ Mode EFFACER et RECRÉER: Cela va SUPPRIMER COMPLÈTEMENT toutes les tables de la base de données puis les recréer!\n\n";
-        } else if (tables) {
-            confirmMessage += "Mode Tables Spécifiques: Seules les tables suivantes seront vidées: " + tables + "\n\n";
-        } else {
-            confirmMessage += "Mode Standard: Les données seront supprimées mais la structure de la base de données sera conservée.\n\n";
-        }
-        
-        if (demo) {
-            confirmMessage += "✓ Des données de démonstration seront chargées.\n";
-        }
-        
-        if (dummy) {
-            confirmMessage += "✓ Des données fictives supplémentaires seront chargées.\n";
-        }
-        
-        confirmMessage += "\nCette action est irréversible. Êtes-vous absolument sûr de vouloir continuer?";
-        
-        if (confirm(confirmMessage)) {
-            // Journalisation des valeurs pour déboguer
-            console.log('Options envoyées au serveur:', {
-                demo: demo,
-                dummy: dummy,
-                erase: erase ? true : false,
-                tables: tables
-            });
-            
-            // Exécution d'une opération PHP directement depuis le serveur
-            $.ajax({
-                url: "{{ url('/execute-reset') }}",
-                type: "POST",
-                data: {
-                    _token: "{{ csrf_token() }}",
-                    demo: demo,
-                    dummy: dummy,
-                    erase: erase ? true : false,
-                    password: password,
-                    tables: tables
-                },
-                beforeSend: function() {
-                    $('#confirmReset').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Traitement...');
-                    // Afficher un message d'information
-                    $('#resetInfo').text('Réinitialisation en cours... Veuillez patienter, cela peut prendre un moment.').show();
-                },
-                success: function(response) {
-                    $('#resetDataModal').modal('hide');
-                    $('#resetInfo').hide();
-                    
-                    // Préparer la liste des options utilisées
-                    let optionsList = $('#resetOptionsList');
-                    optionsList.empty();
-                    
-                    // Déterminer le mode utilisé (standard ou erase)
-                    const mode = response.mode;
-                    console.log('Mode détecté:', mode, 'Réponse complète:', response);
-                    
-                    // Afficher le mode utilisé
-                    if (mode === 'erase') {
-                        optionsList.append('<li class="list-group-item list-group-item-danger"><strong>Mode:</strong> Effacer et recréer (--erase)</li>');
-                    } else {
-                        optionsList.append('<li class="list-group-item list-group-item-info"><strong>Mode:</strong> Standard (conserver structure)</li>');
-                    }
-                    
-                    // Afficher la raison si disponible
-                    if (response.reason) {
-                        optionsList.append('<li class="list-group-item list-group-item-info"><strong>Raison:</strong> ' + response.reason + '</li>');
-                    }
-                    
-                    // Afficher les tables après réinitialisation si disponibles
-                    if (response.tables_after) {
-                        optionsList.append('<li class="list-group-item list-group-item-success"><strong>Nombre de tables après réinitialisation:</strong> ' + response.tables_count + '</li>');
-                        optionsList.append('<li class="list-group-item list-group-item-success"><strong>Tables après réinitialisation:</strong> <br><pre>' + response.tables_after.join(', ') + '</pre></li>');
-                    }
-                    
-                    // Afficher si des tables spécifiques ont été spécifiées
-                    const tablesVal = $('#specificTables').val().trim();
-                    if (tablesVal) {
-                        optionsList.append('<li class="list-group-item list-group-item-info"><strong>Option:</strong> Tables spécifiques: <code>' + tablesVal + '</code> (--tables)</li>');
-                    }
-                    
-                    // Afficher les options utilisées
-                    if ($('#demoData').is(':checked')) {
-                        optionsList.append('<li class="list-group-item list-group-item-success"><strong>Option:</strong> Données de démonstration (--demo)</li>');
-                    }
-                    
-                    if ($('#dummyData').is(':checked')) {
-                        optionsList.append('<li class="list-group-item list-group-item-success"><strong>Option:</strong> Données fictives supplémentaires (--dummy)</li>');
-                    }
-                    
-                    optionsList.append('<li class="list-group-item list-group-item-default"><strong>Option:</strong> Forcer sans confirmation (--force)</li>');
-                    
-                    // Afficher les résultats détaillés
-                    if (response.output) {
-                        $('#resetResultOutput').text(response.output);
-                    } else {
-                        $('#resetResultOutput').text('Pas de sortie détaillée disponible.');
-                    }
-                    $('#resetResultModal').modal('show');
-                },
-                error: function(xhr) {
-                    console.error(xhr);
-                    $('#resetError').text('Erreur lors de la réinitialisation des données.').show();
-                    $('#confirmReset').prop('disabled', false).text('Réinitialiser');
+        // Désactiver le bouton pour éviter les clics multiples
+        $('#confirmReset').prop('disabled', true).text('Traitement en cours...');
+
+        // Envoyer la requête AJAX
+        $.ajax({
+            url: '/execute-reset',
+            type: 'POST',
+            data: { 
+                password: password,
+                tables: specificTables
+            },
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                // Fermer le modal de confirmation
+                $('#resetDataModal').modal('hide');
+                
+                // Ajouter la sortie détaillée
+                $('#resetResultOutput').text(response.output);
+                
+                // Configurer le style du modal pour la réinitialisation
+                $('#resultModalHeader').addClass('modal-header-danger').removeClass('modal-header-success');
+                $('#resultAlertBox').addClass('alert-danger').removeClass('alert-success');
+                $('#resultMessage').text('Les données ont été réinitialisées avec succès.');
+                
+                // Afficher le modal de résultat
+                $('#resetResultModal').modal('show');
+                
+                // Réinitialiser le formulaire
+                $('#resetDataForm')[0].reset();
+                $('#confirmReset').prop('disabled', false).text('Réinitialiser');
+            },
+            error: function(xhr, status, error) {
+                var errorMessage = 'Une erreur est survenue lors de la réinitialisation.';
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMessage = xhr.responseJSON.error;
+                } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
                 }
-            });
+                
+                $('#resetError').text(errorMessage).show();
+                $('#resetInfo').hide();
+                $('#confirmReset').prop('disabled', false).text('Réinitialiser');
+            }
+        });
+    });
+    
+    // Gestion de la génération de données
+    $('#confirmGenerate').click(function() {
+        var password = $('#genPassword').val();
+        var table = $('#genTable').val();
+        var count = $('#genCount').val();
+
+        // Réinitialiser les messages d'erreur
+        $('#genError').hide();
+        $('#genInfo').hide();
+
+        // Vérifier que le mot de passe est entré
+        if (!password) {
+            $('#genError').text('Veuillez entrer le mot de passe.').show();
+            return;
         }
+
+        // Afficher un message d'information pendant le traitement
+        $('#genInfo').text('Génération en cours... Veuillez patienter.').show();
+        
+        // Désactiver le bouton pour éviter les clics multiples
+        $('#confirmGenerate').prop('disabled', true).text('Traitement en cours...');
+
+        // Envoyer la requête AJAX
+        $.ajax({
+            url: '/execute-generate',
+            type: 'POST',
+            data: { 
+                password: password,
+                table: table,
+                count: count
+            },
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                // Fermer le modal de confirmation
+                $('#generateDataModal').modal('hide');
+                
+                // Ajouter la sortie détaillée
+                $('#resetResultOutput').text(response.output);
+                
+                // Configurer le style du modal pour la génération
+                $('#resultModalHeader').addClass('modal-header-success').removeClass('modal-header-danger');
+                $('#resultAlertBox').addClass('alert-success').removeClass('alert-danger');
+                $('#resultMessage').text('Les données ont été générées avec succès.');
+                
+                // Afficher le modal de résultat
+                $('#resetResultModal').modal('show');
+                
+                // Réinitialiser le formulaire
+                $('#generateDataForm')[0].reset();
+                $('#confirmGenerate').prop('disabled', false).text('Générer');
+            },
+            error: function(xhr, status, error) {
+                var errorMessage = 'Une erreur est survenue lors de la génération.';
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMessage = xhr.responseJSON.error;
+                } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                }
+                
+                $('#genError').text(errorMessage).show();
+                $('#genInfo').hide();
+                $('#confirmGenerate').prop('disabled', false).text('Générer');
+            }
+        });
     });
 });
 </script>

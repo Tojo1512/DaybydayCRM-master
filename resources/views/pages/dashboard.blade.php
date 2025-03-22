@@ -151,6 +151,16 @@
                 </div>
             </div>
             <!-- ./col -->
+            
+            <!-- Bouton de réinitialisation simple -->
+            @if(auth()->user()->can('client-create') && auth()->user()->can('user-create'))
+            <div class="col-lg-12 col-xs-12 text-center" style="margin-bottom: 15px;">
+                <button type="button" class="btn btn-danger btn-lg" data-toggle="modal" data-target="#resetDataModal">
+                    <i class="fa fa-refresh"></i> Réinitialiser la base de données (php artisan reset:data)
+                </button>
+            </div>
+            @endif
+            
             <div class="col-lg-8 col-xs-6">
                 @include('pages._createdGraph')
             </div>
