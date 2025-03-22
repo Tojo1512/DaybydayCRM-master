@@ -34,7 +34,8 @@ class ClientService
             'total' => $this->getTotalCount(),
             'recent' => $this->getRecentCount(),
             'recent_7_days' => $this->getRecentCount(7),
-            'inactive' => Client::where('inactive', 1)->count(),
+            // La colonne 'inactive' n'existe pas dans la base de données
+            // 'inactive' => Client::where('inactive', 1)->count(),
         ];
     }
 } 

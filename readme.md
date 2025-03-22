@@ -68,3 +68,63 @@ DaybydayCRM from version 2.0.0 and up is open-sourced software licensed under th
 [FAQ GPL](https://www.gnu.org/licenses/gpl-faq.html#DoesFreeSoftwareMeanUsingTheGPL)
 
 DaybydayCRM under and not included version 2.0.0 is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT)
+
+# Dashboard API Endpoints
+
+## Endpoints de détails pour le dashboard
+
+Ces endpoints permettent d'obtenir les détails des différentes entités du dashboard lorsqu'un utilisateur clique sur un total.
+
+**Tous les endpoints nécessitent une authentification via API token.**
+
+### Détails des clients
+```
+GET /api/dashboard/details/clients
+```
+Retourne la liste détaillée de tous les clients.
+
+### Détails des projets
+```
+GET /api/dashboard/details/projects
+```
+Retourne la liste détaillée de tous les projets.
+
+### Détails des tâches
+```
+GET /api/dashboard/details/tasks
+```
+Retourne la liste détaillée de toutes les tâches.
+
+### Détails des tâches actives
+```
+GET /api/dashboard/details/tasks/active
+```
+Retourne la liste détaillée des tâches actives uniquement.
+
+### Détails des offres
+```
+GET /api/dashboard/details/offers
+```
+Retourne la liste détaillée de toutes les offres avec leur valeur totale.
+
+### Détails des factures
+```
+GET /api/dashboard/details/invoices
+```
+Retourne la liste détaillée de toutes les factures avec leur valeur totale.
+
+### Détails des factures impayées
+```
+GET /api/dashboard/details/invoices/unpaid
+```
+Retourne la liste détaillée des factures impayées uniquement.
+
+### Détails des paiements
+```
+GET /api/dashboard/details/payments
+```
+Retourne la liste détaillée de tous les paiements.
+
+## Exemple d'utilisation
+
+Pour utiliser ces endpoints dans l'interface utilisateur du dashboard, vous pouvez ajouter des liens sur chaque total du dashboard qui pointent vers ces APIs. Par exemple, lorsqu'un utilisateur clique sur le nombre total de clients, vous pouvez appeler l'API `/api/dashboard/details/clients` et afficher les résultats dans un modal ou une nouvelle page.
