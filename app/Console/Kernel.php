@@ -16,7 +16,8 @@ class Kernel extends ConsoleKernel
         Commands\Inspire::class,
         Commands\Test::class,
         Commands\ResetData::class,
-        Commands\ImportCsvCommand::class
+        Commands\ImportCsvCommand::class,
+        Commands\GenerateData::class
     ];
 
     /**
