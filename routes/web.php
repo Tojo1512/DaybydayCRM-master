@@ -88,7 +88,7 @@ Route::group(['middleware' => ['auth']], function () {
      */
     Route::group(['prefix' => 'leads'], function () {
         Route::get('/all-leads-data', 'LeadsController@allLeads')->name('leads.all');
-        Route::get('/data', 'LeadsController@leadsJson')->name('leads.data');
+        Route::get('/data', 'LeadsController@anyData')->name('leads.data');
         Route::patch('/updateassign/{external_id}', 'LeadsController@updateAssign')->name('lead.update.assignee');
         Route::patch('/updatestatus/{external_id}', 'LeadsController@updateStatus')->name('lead.update.status');
         Route::patch('/updatefollowup/{external_id}', 'LeadsController@updateFollowup')->name('lead.followup');

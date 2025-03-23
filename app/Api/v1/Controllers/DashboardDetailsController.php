@@ -246,7 +246,7 @@ class DashboardDetailsController extends ApiController
     public function getPaymentsDetails()
     {
         $payments = Payment::with(['invoice', 'invoice.client'])
-            ->orderBy('payment_date', 'ask')
+            ->orderBy('payment_date', 'asc')
             ->get()
             ->map(function ($payment) {
                 return [

@@ -53,6 +53,46 @@ class LeadsController extends Controller
         });
         return $leads->toJson();
     }
+    
+    /**
+     * Data for Data tables
+     * @return mixed
+     */
+    public function anyData()
+    {
+        $leads = Lead::with(['user', 'status', 'client'])->select(
+            collect(['external_id', 'title', 'created_at', 'deadline', 'user_assigned_id', 'status_id', 'client_id'])
+                ->map(function ($field) {
+                    return (new Lead())->qualifyColumn($field);
+                })
+                ->all()
+        );
+
+        return Datatables::of($leads)
+            ->addColumn('titlelink', '<a href="{{ route("leads.show",[$external_id]) }}">{{$title}}</a>')
+            ->editColumn('created_at', function ($leads) {
+                return $leads->created_at ? with(new Carbon($leads->created_at))
+                    ->format(carbonDate()) : '';
+            })
+            ->editColumn('deadline', function ($leads) {
+                return $leads->deadline ? with(new Carbon($leads->deadline))
+                    ->format(carbonDate()) : '';
+            })
+            ->editColumn('user_assigned_id', function ($leads) {
+                return $leads->user->name;
+            })
+            ->editColumn('status_id', function ($leads) {
+                return '<span class="label label-success" style="background-color:' . $leads->status->color . '"> ' .
+                    $leads->status->title . '</span>';
+            })
+            ->addColumn('view', function ($leads) {
+                return '<a href="' . route("leads.show", $leads->external_id) . '" class="btn btn-link">' . __('View') .'</a>'
+                . '<a data-toggle="modal" data-id="'. route('leads.destroy', $leads->external_id) . '" data-target="#deletion" class="btn btn-link">' . __('Delete') .'</a>'
+                ;
+            })
+            ->rawColumns(['titlelink','view', 'status_id'])
+            ->make(true);
+    }
 
     /**
      * Show the form for creating a new resource.

@@ -102,9 +102,14 @@ class Client extends Model
         return $this->hasMany(Appointment::class);
     }
 
+    public function offers()
+    {
+        return $this->hasMany(Offer::class);
+    }
+
     public function primaryContact()
     {
-        return $this->hasOne(Contact::class)->whereIsPrimary(true);
+        return $this->contacts()->where('is_primary', 1)->first();
     }
 
     public function getprimaryContactAttribute()
