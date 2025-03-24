@@ -42,7 +42,7 @@ class InvoiceCalculator
     public function getTotalPrice(): Money
     {
         $price = 0;
-        $invoiceLines = $this->invoice->invoiceLines;
+        $invoiceLines = $this->invoice->fresh()->invoiceLines;
 
         foreach ($invoiceLines as $invoiceLine) {
             $price += $invoiceLine->quantity * $invoiceLine->price;
@@ -54,7 +54,7 @@ class InvoiceCalculator
     public function getSubTotal(): Money
     {
         $price = 0;
-        $invoiceLines = $this->invoice->invoiceLines;
+        $invoiceLines = $this->invoice->fresh()->invoiceLines;
 
         foreach ($invoiceLines as $invoiceLine) {
             $price += $invoiceLine->quantity * $invoiceLine->price;
@@ -64,7 +64,10 @@ class InvoiceCalculator
 
     public function getAmountDue()
     {
-        return new Money($this->getTotalPrice()->getAmount() - $this->invoice->payments()->sum('amount'));
+        $freshInvoice = $this->invoice->fresh();
+        $paymentSum = $freshInvoice->payments()->sum('amount');
+        
+        return new Money($this->getTotalPrice()->getAmount() - $paymentSum);
     }
 
     public function getInvoice()

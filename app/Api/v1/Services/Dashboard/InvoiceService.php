@@ -41,7 +41,7 @@ class InvoiceService
             }
         }
         
-        return $total;
+        return $total / 100;
     }
     
     /**
@@ -61,7 +61,7 @@ class InvoiceService
             }
         }
         
-        return $total;
+        return $total /100;
     }
     
     /**

@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Auth\LoginController;
 use App\Api\v1\Controllers\DashboardController;
 use App\Api\v1\Controllers\DashboardDetailsController;
+use App\Api\v1\Controllers\PaymentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -39,6 +40,10 @@ Route::group(['namespace' => 'App\Api\v1\Controllers'], function () {
             Route::get('invoices', [DashboardDetailsController::class, 'getInvoicesDetails']);
             Route::get('invoices/unpaid', [DashboardDetailsController::class, 'getUnpaidInvoicesDetails']);
             Route::get('payments', [DashboardDetailsController::class, 'getPaymentsDetails']);
+            
+            // Routes pour les opérations sur les paiements
+            Route::put('payments/{externalId}', [PaymentController::class, 'update']);
+            Route::delete('payments/{externalId}', [PaymentController::class, 'destroy']);
         });
     });
 });

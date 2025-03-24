@@ -30,7 +30,7 @@ class PaymentService
      */
     public function getTotalValue(): float
     {
-        return Payment::sum('amount');
+        return Payment::sum('amount') / 100;
     }
     
     /**

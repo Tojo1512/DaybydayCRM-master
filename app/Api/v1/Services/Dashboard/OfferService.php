@@ -39,7 +39,7 @@ class OfferService
             }
         }
         
-        return $total;
+        return $total / 100;
     }
     
     /**
