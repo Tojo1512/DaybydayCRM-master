@@ -210,4 +210,115 @@ class DataGeneratorController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Récupère les données pour une relation spécifique
+     *
+     * @param string $relation
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getRelationData($relation)
+    {
+        // Retourne le schéma des tables pour la requête 'table_schema'
+        if ($relation === 'table_schema') {
+            $schema = [];
+            foreach ($this->supportedTables as $tableKey => $tableLabel) {
+                $schema[$tableKey] = [
+                    'label' => $tableLabel,
+                    'foreign_keys' => $this->getTableForeignKeys($tableKey)
+                ];
+            }
+            return response()->json($schema);
+        }
+
+        // Gestion des relations connues
+        switch ($relation) {
+            case 'users':
+                $data = \App\Models\User::select('id', 'name')->get()->toArray();
+                break;
+            case 'clients':
+                $data = \App\Models\Client::select('id', 'company_name as name')->get()->toArray();
+                break;
+            case 'projects':
+                $data = \App\Models\Project::select('id', 'title as name')->get()->toArray();
+                break;
+            case 'tasks':
+                $data = \App\Models\Task::select('id', 'title as name')->get()->toArray();
+                break;
+            case 'leads':
+                $data = \App\Models\Lead::select('id', 'title as name')->get()->toArray();
+                break;
+            case 'departments':
+                $data = \App\Models\Department::select('id', 'name')->get()->toArray();
+                break;
+            default:
+                return response()->json([]);
+        }
+
+        return response()->json($data);
+    }
+
+    /**
+     * Récupère les clés étrangères pour une table spécifique
+     *
+     * @param string $table
+     * @return array
+     */
+    protected function getTableForeignKeys($table)
+    {
+        $foreignKeys = [];
+
+        switch ($table) {
+            case 'tasks':
+                $foreignKeys = [
+                    'user_assigned_id' => [
+                        'label' => 'Utilisateur assigné',
+                        'relation' => 'users'
+                    ],
+                    'client_id' => [
+                        'label' => 'Client',
+                        'relation' => 'clients'
+                    ],
+                    'project_id' => [
+                        'label' => 'Projet',
+                        'relation' => 'projects'
+                    ]
+                ];
+                break;
+            case 'clients':
+                $foreignKeys = [
+                    'user_id' => [
+                        'label' => 'Utilisateur responsable',
+                        'relation' => 'users'
+                    ]
+                ];
+                break;
+            case 'projects':
+                $foreignKeys = [
+                    'user_assigned_id' => [
+                        'label' => 'Utilisateur assigné',
+                        'relation' => 'users'
+                    ],
+                    'client_id' => [
+                        'label' => 'Client',
+                        'relation' => 'clients'
+                    ]
+                ];
+                break;
+            case 'leads':
+                $foreignKeys = [
+                    'user_assigned_id' => [
+                        'label' => 'Utilisateur assigné',
+                        'relation' => 'users'
+                    ],
+                    'client_id' => [
+                        'label' => 'Client',
+                        'relation' => 'clients'
+                    ]
+                ];
+                break;
+        }
+
+        return $foreignKeys;
+    }
 } 

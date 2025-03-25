@@ -1,6 +1,0 @@
-title,description,status_id,user_id,client_id,deadline_at
-Préparer présentation client,Créer une présentation PowerPoint pour la réunion du 15/05,1,1,2,2023-05-14 18:00:00
-Envoyer devis révisé,Mettre à jour le devis selon les dernières demandes,2,2,1,2023-05-10 12:00:00
-Organiser réunion d'équipe,Planifier réunion hebdomadaire de suivi de projet,1,3,3,2023-05-12 09:00:00
-Finaliser contrat,Révision finale du contrat avant signature,3,1,5,2023-05-20 17:00:00
-Installer nouvel environnement,Configuration du serveur de développement,2,2,4,2023-05-18 15:00:00 

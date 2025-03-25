@@ -97,8 +97,8 @@ class InvoiceCalculator
             $price += $invoiceLine->quantity * $invoiceLine->price;
         }
         
-        // Appliquer la remise globale si elle existe
-        if ($this->getGlobalDiscountRate() > 0) {
+        // N'appliquer la remise globale que si elle n'a pas déjà été appliquée aux lignes de facture
+        if (!$this->invoice->discount_applied && $this->getGlobalDiscountRate() > 0) {
             $price -= $this->getGlobalDiscountAmount()->getAmount() * $this->tax->multipleVatRate();
         }
 
@@ -122,7 +122,13 @@ class InvoiceCalculator
         $freshInvoice = $this->invoice->fresh();
         $paymentSum = $freshInvoice->payments()->sum('amount');
         
-        return new Money($this->getTotalPrice()->getAmount() - $paymentSum);
+        // Si la remise a déjà été appliquée aux lignes de facture, utiliser getTotalValue()
+        // Sinon, utiliser getTotalPrice() qui appliquera la remise
+        $total = $freshInvoice->discount_applied ? 
+            $this->getTotalValue()->getAmount() : 
+            $this->getTotalPrice()->getAmount();
+        
+        return new Money($total - $paymentSum);
     }
 
     public function getInvoice()
