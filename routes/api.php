@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Api\v1\Controllers\DashboardController;
 use App\Api\v1\Controllers\DashboardDetailsController;
 use App\Api\v1\Controllers\PaymentController;
+use App\Http\Controllers\API\DiscountSettingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -44,6 +45,12 @@ Route::group(['namespace' => 'App\Api\v1\Controllers'], function () {
             // Routes pour les opérations sur les paiements
             Route::put('payments/{externalId}', [PaymentController::class, 'update']);
             Route::delete('payments/{externalId}', [PaymentController::class, 'destroy']);
+            
+            // Routes pour les paramètres de remise
+            Route::get('discount-settings', [DiscountSettingController::class, 'getGlobalDiscount']);
+            Route::post('discount-settings', [DiscountSettingController::class, 'updateGlobalDiscount']);
+            Route::post('discount-settings/insert', [DiscountSettingController::class, 'insertNewDiscount']);
+            
         });
     });
 });

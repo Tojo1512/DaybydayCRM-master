@@ -31,6 +31,7 @@ class Invoice extends Model
         'client_id',
         'integration_invoice_id',
         'integration_type',
+        'discount_applied',
         'source_id',
         'source_type',
         'external_id',
@@ -101,23 +102,27 @@ class Invoice extends Model
 
     /**
      * @param $contactId
-     * @param bool $sendMail
+     * @param bool $applyDiscount Si la remise globale doit être appliquée
      * @return array
      */
-    public function invoice($contactId)
+    public function invoice($contactId, $applyDiscount = false)
     {
         /** @var BillingIntegrationInterface $api */
         $api = Integration::initBillingIntegration();
         if ($api && $contactId) {
-            $results = $api->createInvoice(
-                [
-                    'currency' => Setting::first()->currency,
-                    'show_lines_incl_vat' => true,
-                    'description' => $this->source->title,
-                    'contact_id' => $contactId,
-                    'invoice_lines' => $this->invoiceLines,
-                ]
-            );
+            // Nous ne passons plus le paramètre de remise globale car celle-ci est
+            // déjà appliquée directement sur les lignes de facture si nécessaire
+            
+            $invoiceData = [
+                'currency' => Setting::first()->currency,
+                'show_lines_incl_vat' => true,
+                'description' => $this->source ? $this->source->title : 'Invoice',
+                'contact_id' => $contactId,
+                'invoice_lines' => $this->invoiceLines,
+            ];
+            
+            $results = $api->createInvoice($invoiceData);
+            
             $this->integration_invoice_id = $results->invoiceId;
             $this->integration_type = get_class($api);
             $this->save();

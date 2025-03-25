@@ -35,7 +35,7 @@
                         @foreach($offers as $index => $offer)
                             <tr>
                                 <td>{{$index +1}}</td>
-                                <td>{{formatMoney($offer->getTotalPrice())}}</td>
+                                <td>{{formatMoney($offer->getTotalValue())}}</td>
                                 <td>{{$offer->getInvoice()->status}}</td>
                                 <td>{{$offer->getInvoice()->created_at->format(carbonDateWithText()) }}</td>
                                 <td>

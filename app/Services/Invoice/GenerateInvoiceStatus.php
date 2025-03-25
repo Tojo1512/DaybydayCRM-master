@@ -61,7 +61,12 @@ class GenerateInvoiceStatus
 
     public function isPaid(): bool
     {
-        return $this->price->getAmount() === $this->sum;
+        // Ajouter une petite marge de tolérance (0.5%) pour les erreurs d'arrondi
+        $tolerance = $this->price->getAmount() * 0.005;
+        $difference = abs($this->price->getAmount() - $this->sum);
+        
+        // Si la différence est dans la marge de tolérance, considérer comme payé
+        return $difference <= $tolerance;
     }
 
     public function isUnPaid(): bool
@@ -71,6 +76,10 @@ class GenerateInvoiceStatus
 
     public function isOverPaid(): bool
     {
-        return $this->price->getAmount() < $this->sum;
+        // Ajouter une petite marge de tolérance (0.5%) pour les erreurs d'arrondi
+        $tolerance = $this->price->getAmount() * 0.005;
+        
+        // Considérer comme trop payé seulement si la différence dépasse la tolérance
+        return ($this->sum - $this->price->getAmount()) > $tolerance;
     }
 }

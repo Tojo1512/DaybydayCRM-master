@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Enums\OfferStatus;
+use App\Repositories\Money\Money;
+use App\Services\Invoice\InvoiceCalculator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -34,6 +36,11 @@ class Offer extends Model
     {
         return $this->hasOne(Invoice::class);
     }
+    
+    public function getInvoice()
+    {
+        return $this;
+    }
 
     public function client()
     {
@@ -50,5 +57,25 @@ class Offer extends Model
     {
         $this->status = OfferStatus::lost()->getStatus();
         $this->save();
+    }
+    
+    public function getTotalPrice()
+    {
+        $calculator = app(InvoiceCalculator::class, ['invoice' => $this]);
+        return $calculator->getTotalPrice();
+    }
+
+    /**
+     * Récupère la valeur totale de l'offre courante sans aucune modification
+     */
+    public function getTotalValue(): float
+    {
+        $total = 0;
+        
+        foreach ($this->invoiceLines as $line) {
+            $total += $line->quantity * $line->price;
+        }
+        
+        return $total / 100;
     }
 }

@@ -30,6 +30,7 @@ use App\Models\Offer;
 use App\Models\Product;
 use App\Services\InvoiceNumber\InvoiceNumberService;
 use Illuminate\Support\Facades\Validator;
+use App\Services\Invoice\GenerateInvoiceStatus;
 
 class InvoicesController extends Controller
 {
@@ -77,10 +78,28 @@ class InvoicesController extends Controller
         }
 
         $invoiceCalculator = new InvoiceCalculator($invoice);
-        $totalPrice = $invoiceCalculator->getTotalPrice();
-        $subPrice = $invoiceCalculator->getSubTotal();
-        $vatPrice = $invoiceCalculator->getVatTotal();
-        $amountDue = $invoiceCalculator->getAmountDue();
+        
+        // Calculer les montants avec et sans remise
+        $subTotalBeforeDiscount = $invoiceCalculator->getSubTotalBeforeDiscount();
+        $globalDiscountRate = $invoiceCalculator->getGlobalDiscountRate() * 100; // Convertir en pourcentage
+        $globalDiscountAmount = $invoiceCalculator->getGlobalDiscountAmount();
+        $hasGlobalDiscount = $globalDiscountRate > 0;
+        
+        // Calculs pour l'affichage sans remise (par défaut)
+        $subPrice = $subTotalBeforeDiscount;
+        $vatRate = $invoiceCalculator->getTax()->vatRate();
+        $vatPrice = new Money($subPrice->getAmount() * $vatRate);
+        $totalPrice = new Money($subPrice->getAmount() + $vatPrice->getAmount());
+        
+        // Calculs pour l'affichage avec remise (informatif)
+        $subPriceWithDiscount = $invoiceCalculator->getSubTotal();
+        $vatPriceWithDiscount = $invoiceCalculator->getVatTotal();
+        $totalPriceWithDiscount = $invoiceCalculator->getTotalPrice();
+        
+        // Calculer le montant dû en fonction du statut de la facture
+        $amountDue = $invoice->discount_applied ? 
+            $invoiceCalculator->getAmountDue() : 
+            new Money($totalPrice->getAmount() - $invoice->payments()->sum('amount'));
         
         return view('invoices.show')
             ->withInvoice($invoice)
@@ -94,7 +113,13 @@ class InvoicesController extends Controller
             ->withPaymentSources(PaymentSource::values())
             ->withAmountDue($amountDue)
             ->withSource($invoice->source)
-            ->withCompanyName(Setting::first()->company);
+            ->withCompanyName(Setting::first()->company)
+            ->withGlobalDiscountRate($globalDiscountRate)
+            ->withGlobalDiscountAmountFormatted(app(MoneyConverter::class, ['money' => $globalDiscountAmount])->format())
+            ->withSubTotalBeforeDiscountFormatted(app(MoneyConverter::class, ['money' => $subTotalBeforeDiscount])->format())
+            ->withHasGlobalDiscount($hasGlobalDiscount)
+            ->withTotalPriceWithDiscountFormatted(app(MoneyConverter::class, ['money' => $totalPriceWithDiscount])->format())
+            ->withPriceWithoutDiscountFormatted(app(MoneyConverter::class, ['money' => $totalPrice])->format());
     }
 
 
@@ -117,7 +142,47 @@ class InvoicesController extends Controller
             return redirect()->route('invoices.show', $external_id);
         }
 
-        $result = $invoice->invoice($request->invoiceContact);
+        // Vérifier si l'utilisateur a choisi d'appliquer la remise
+        $applyDiscount = $request->has('apply_discount') ? (bool)$request->apply_discount : false;
+        
+        // Enregistrement de l'état actuel de la remise globale
+        $calculator = app(InvoiceCalculator::class, ['invoice' => $invoice]);
+        $globalDiscountRate = $calculator->getGlobalDiscountRate();
+        $hasGlobalDiscount = $globalDiscountRate > 0 && $applyDiscount;
+        
+        // Si l'utilisateur veut appliquer la remise, mettre à jour les lignes de facture directement
+        if ($hasGlobalDiscount) {
+            $discountMultiplier = (1 - $globalDiscountRate);
+            
+            // Pour éviter d'appliquer la remise plusieurs fois, vérifions si elle a déjà été appliquée
+            $discountAlreadyApplied = session('discount_already_applied_' . $invoice->id, false);
+            
+            if (!$discountAlreadyApplied) {
+                // Pour chaque ligne de facture, appliquer la remise au prix
+                foreach ($invoice->invoiceLines as $line) {
+                    // Calculer le nouveau prix après remise
+                    $originalPrice = $line->price;
+                    $discountedPrice = round($originalPrice * $discountMultiplier);
+                    
+                    // Mettre à jour la ligne de facture avec le prix réduit
+                    $line->price = $discountedPrice;
+                    $line->save();
+                }
+                
+                // Marquer que la remise a été appliquée pour cette facture
+                session(['discount_already_applied_' . $invoice->id => true]);
+            }
+            
+            // Enregistrer le taux de remise dans la session pour le retrouver après
+            session(['current_discount_rate' => $globalDiscountRate]);
+        } else {
+            // Si l'utilisateur ne veut pas appliquer la remise, on enregistre un taux de 0%
+            session(['current_discount_rate' => 0]);
+            // Réinitialiser le marqueur d'application de remise
+            session(['discount_already_applied_' . $invoice->id => false]);
+        }
+
+        $result = $invoice->invoice($request->invoiceContact, $applyDiscount);
         if ($request->sendMail && $request->invoiceContact) {
             $attachPdf = $request->attachPdf ? true : false;
             $invoice->sendMail($request->subject, $request->message, $request->recipientMail, $attachPdf);
@@ -127,8 +192,12 @@ class InvoicesController extends Controller
         $invoice->status  =  InvoiceStatus::unpaid()->getStatus();
         $invoice->due_at  =  $result["due_at"];
         $invoice->invoice_number = app(InvoiceNumberService::class)->setInvoiceNumber($result["invoice_number"]);
+        
+        // Sauvegarder l'information sur l'application de la remise
+        $invoice->discount_applied = $hasGlobalDiscount;
         $invoice->save();
 
+        session()->flash('flash_message', __('Invoice successfully sent'));
         return redirect()->back();
     }
 
@@ -232,5 +301,36 @@ class InvoicesController extends Controller
         $invoices = Invoice::pastDueAt()->get();
         
         return view('invoices.overdue')->withInvoices($invoices);
+    }
+
+    /**
+     * Recalculate invoice statuses
+     * This is useful after changes to status calculation logic
+     */
+    public function recalculateStatuses()
+    {
+        if (!auth()->user()->can('invoice-manage')) {
+            session()->flash('flash_message_warning', __('You do not have permission to manage invoices'));
+            return redirect()->route('invoices.index');
+        }
+        
+        $invoices = Invoice::all();
+        $count = 0;
+        
+        foreach ($invoices as $invoice) {
+            if ($invoice->payments()->count() > 0) {
+                $status = app(GenerateInvoiceStatus::class, ['invoice' => $invoice])->getStatus();
+                $oldStatus = $invoice->status;
+                
+                if ($status !== $oldStatus) {
+                    $invoice->status = $status;
+                    $invoice->save();
+                    $count++;
+                }
+            }
+        }
+        
+        session()->flash('flash_message', __(':count invoice statuses recalculated', ['count' => $count]));
+        return redirect()->route('invoices.index');
     }
 }

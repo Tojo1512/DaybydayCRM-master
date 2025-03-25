@@ -14,6 +14,7 @@ use Ramsey\Uuid\Uuid;
 use App\Services\Invoice\InvoiceCalculator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Role;
 
 class PaymentsController extends Controller
 {
@@ -36,17 +37,29 @@ class PaymentsController extends Controller
      */
     public function destroy(Payment $payment)
     {
-        if (!Illuminate\Support\Facades\Auth::user()->can('payment-delete')) {
-            session()->flash('flash_message', __("You don't have permission to delete a payment"));
+        if (!Auth::check()) {
+            session()->flash('flash_message', __("Vous devez être connecté pour effectuer cette action"));
+            return redirect()->route('login');
+        }
+
+        $user = Auth::user();
+        if (!$user->hasRole(Role::OWNER_ROLE)) {
+            session()->flash('flash_message', __("Vous n'avez pas les permissions nécessaires pour supprimer un paiement"));
             return redirect()->back();
         }
+
+        if (!$user->can('payment-delete')) {
+            session()->flash('flash_message', __("Vous n'avez pas la permission de supprimer un paiement"));
+            return redirect()->back();
+        }
+
         $api = Integration::initBillingIntegration();
         if ($api) {
             $api->deletePayment($payment);
         }
 
         $payment->delete();
-        session()->flash('flash_message', __('Payment successfully deleted'));
+        session()->flash('flash_message', __('Paiement supprimé avec succès'));
         return redirect()->back();
     }
 
@@ -57,16 +70,21 @@ class PaymentsController extends Controller
             return redirect()->route('invoices.show', $invoice->external_id);
         }
         
-        $isExceeding = app(InvoiceCalculator::class, ['invoice' => $invoice])->isPaymentExceedingAmount($request->amount);
+        // Utiliser le calculateur pour obtenir le montant réel dû (après application de la remise globale)
+        $invoiceCalculator = app(InvoiceCalculator::class, ['invoice' => $invoice]);
+        $isExceeding = $invoiceCalculator->isPaymentExceedingAmount($request->amount);
         
         // Si le montant dépasse mais que l'utilisateur a confirmé, on procède
         if ($isExceeding && !$request->has('confirm_exceeding')) {
             // Stocker les données du formulaire en session pour les récupérer après confirmation
             session(['payment_data' => $request->all()]);
             
+            // Afficher le montant réel dû, en tenant compte de la remise globale
+            $amountDue = $invoiceCalculator->getAmountDue()->getAmount() / 100;
+            
             return redirect()->route('invoices.show', $invoice->external_id)
                 ->with('show_exceeding_modal', true)
-                ->with('amount_due', app(InvoiceCalculator::class, ['invoice' => $invoice])->getAmountDue()->getAmount() / 100)
+                ->with('amount_due', $amountDue)
                 ->with('payment_amount', $request->amount);
         }
 

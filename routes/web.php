@@ -170,6 +170,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/sentinvoice/{external_id}', 'InvoicesController@updateSentStatus')->name('invoice.sent');
         Route::post('/newitem/{external_id}', 'InvoicesController@newItem')->name('invoice.new.item');
         Route::get('/overdue', 'InvoicesController@overdue')->name('invoices.overdue');
+        Route::get('/recalculate-statuses', 'InvoicesController@recalculateStatuses')->name('invoices.recalculate-statuses');
         Route::get('/{invoice}', 'InvoicesController@show')->name('invoices.show');
         Route::get('/payments-data/{invoice}', 'InvoicesController@paymentsDataTable')->name('invoice.paymentsDataTable');
     });

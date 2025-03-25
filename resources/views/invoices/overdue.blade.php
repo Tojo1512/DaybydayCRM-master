@@ -8,6 +8,11 @@
                 <div class="tablet__head ">
                     <div class="tablet__head-toolbar">
                         @lang('Overdue invoices')
+                        <div class="pull-right">
+                            <a href="{{ route('invoices.recalculate-statuses') }}" class="btn btn-md btn-secondary">
+                                <i class="fa fa-refresh"></i> @lang('Recalculate invoice statuses')
+                            </a>
+                        </div>
                     </div>
                 </div>
                 <div class="tablet__body">

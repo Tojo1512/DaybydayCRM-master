@@ -141,6 +141,7 @@ class DashboardDetailsController extends ApiController
             ->orderBy('created_at', 'asc')
             ->get()
             ->map(function ($offer) {
+                // Calculer directement le total sans appliquer de remise
                 $total = 0;
                 foreach ($offer->invoiceLines as $line) {
                     $total += $line->quantity * $line->price;

@@ -5,6 +5,7 @@ use App\Repositories\Money\Money;
 use App\Repositories\Money\MoneyConverter;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Services\Invoice\InvoiceCalculator;
 
 class InvoiceLine extends Model
 {
@@ -49,7 +50,21 @@ class InvoiceLine extends Model
 
     public function getTotalValueAttribute()
     {
-        return $this->quantity * $this->price;
+        // Calculer le montant de base
+        $baseTotal = $this->quantity * $this->price;
+        
+        // Si cette ligne fait partie d'une facture avec une remise globale active
+        if ($this->invoice) {
+            $calculator = app(InvoiceCalculator::class, ['invoice' => $this->invoice]);
+            $discountRate = $calculator->getGlobalDiscountRate();
+            
+            if ($discountRate > 0) {
+                // Appliquer la remise globale à cette ligne
+                return $baseTotal * (1 - $discountRate);
+            }
+        }
+        
+        return $baseTotal;
     }
 
     public function product()
@@ -59,7 +74,8 @@ class InvoiceLine extends Model
     
     public function getTotalValueConvertedAttribute()
     {
-        $money = new Money($this->quantity * $this->price);
+        // Utiliser directement l'attribut total_value qui contient déjà la logique de remise
+        $money = new Money($this->getTotalValueAttribute());
         return app(MoneyConverter::class, ['money' => $money])->format();
     }
     
