@@ -276,6 +276,9 @@
             <a href="{{ route('imports.index')}}" class="list-group-item childlist"> 
                 <i class="bullet-point"><span></span></i> {{ __('CSV Import') }}
             </a>
+            <a href="{{ route('imports.dynamic')}}" class="list-group-item childlist"> 
+                <i class="bullet-point"><span></span></i> <span class="badge badge-success">Nouveau</span> {{ __('Import Intelligent') }}
+            </a>
             </div>
             
             @if(Entrust::can('calendar-view'))
@@ -322,6 +325,9 @@
                     <a href="{{ route('integrations.index')}}"
                        class="list-group-item childlist"> <i
                                 class="bullet-point"><span></span></i> {{ __('Integrations') }}</a>
+                    <a href="{{ route('database.explorer')}}"
+                       class="list-group-item childlist"> <i
+                                class="bullet-point"><span></span></i> {{ __('Explorateur BDD') }}</a>
                 </div>
             @endif
         </div>

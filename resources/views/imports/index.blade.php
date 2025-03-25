@@ -1,100 +1,169 @@
 @extends('layouts.master')
 
 @section('heading')
-{{ __('Import CSV') }}
+    Importation de données
 @stop
 
 @section('content')
-<div class="card">
-    <div class="card-header">
-        <h3 class="card-title"><i class="fa fa-upload mr-2"></i>{{ __('Import des fichiers CSV') }}</h3>
+
+<div class="row">
+    <div class="col-md-12 lead mb-3">
+        Sélectionnez la méthode d'importation que vous souhaitez utiliser :
     </div>
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-7">
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Importation standard</h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">
+                    Importez des données dans une seule table à la fois à partir d'un fichier CSV.
+                </p>
+                <p class="text-muted">
+                    Utilisez cette option pour importer des données simples dans une table spécifique.
+                </p>
                 <form action="{{ route('imports.process') }}" method="POST" enctype="multipart/form-data">
                     {{ csrf_field() }}
                     
-                    <div class="form-section mb-4">
-                        <h4 class="section-title">{{ __('Sélection des fichiers') }}</h4>
-                        <p class="section-description">{{ __('Veuillez sélectionner jusqu\'à 3 fichiers CSV à importer') }}</p>
-                        
-                        <div class="form-group mb-4">
-                            <label for="file1">{{ __('Fichier CSV 1') }} <span class="required">*</span></label>
-                            <div class="file-input-wrapper">
-                                <div class="file-icon"><i class="fa fa-file-text-o"></i></div>
-                                <input type="file" name="files[]" id="file1" class="file-input" accept=".csv" required>
-                                <div class="file-placeholder">{{ __('Sélectionner un fichier CSV') }}</div>
-                                <div class="file-name"></div>
-                            </div>
-                        </div>
-                        
-                        <div class="form-group mb-4">
-                            <label for="file2">{{ __('Fichier CSV 2') }} <span class="text-muted">({{ __('optionnel') }})</span></label>
-                            <div class="file-input-wrapper">
-                                <div class="file-icon"><i class="fa fa-file-text-o"></i></div>
-                                <input type="file" name="files[]" id="file2" class="file-input" accept=".csv">
-                                <div class="file-placeholder">{{ __('Sélectionner un fichier CSV') }}</div>
-                                <div class="file-name"></div>
-                            </div>
-                        </div>
-                        
-                        <div class="form-group mb-4">
-                            <label for="file3">{{ __('Fichier CSV 3') }} <span class="text-muted">({{ __('optionnel') }})</span></label>
-                            <div class="file-input-wrapper">
-                                <div class="file-icon"><i class="fa fa-file-text-o"></i></div>
-                                <input type="file" name="files[]" id="file3" class="file-input" accept=".csv">
-                                <div class="file-placeholder">{{ __('Sélectionner un fichier CSV') }}</div>
-                                <div class="file-name"></div>
-                            </div>
-                        </div>
+                    <div class="form-group">
+                        <label for="table">Sélectionnez la table cible</label>
+                        <select name="table" id="table" class="form-control">
+                            @foreach($availableTables as $table)
+                                <option value="{{ $table }}">{{ ucfirst($table) }}</option>
+                            @endforeach
+                        </select>
                     </div>
                     
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fa fa-upload mr-2"></i> {{ __('Importer') }}
-                        </button>
+                    <div class="form-group">
+                        <label for="file">Fichier CSV</label>
+                        <input type="file" name="file" id="file" class="form-control-file" required accept=".csv">
                     </div>
+                    
+                    <div class="form-group">
+                        <label for="delimiter">Délimiteur</label>
+                        <select name="delimiter" id="delimiter" class="form-control">
+                            <option value="," selected>,</option>
+                            <option value=";">;</option>
+                            <option value=".">.</option>
+                            <option value="tab">Tab</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa fa-upload"></i> Importer
+                    </button>
                 </form>
             </div>
-            
-            <div class="col-md-5">
-                <div class="info-panel">
-                    <div class="info-header">
-                        <h4><i class="fa fa-info-circle mr-2"></i>{{ __('Instructions') }}</h4>
-                    </div>
-                    
-                    <div class="info-body">
-                        <div class="alert alert-info">
-                            <p>{{ __('Pour importer vos données, veuillez télécharger un ou plusieurs fichiers CSV.') }}</p>
-                        </div>
-                        
-                        <div class="requirements-list">
-                            <div class="requirement-item">
-                                <div class="requirement-icon"><i class="fa fa-check"></i></div>
-                                <div class="requirement-text">{{ __('Format accepté: CSV uniquement') }}</div>
-                            </div>
-                            
-                            <div class="requirement-item">
-                                <div class="requirement-icon"><i class="fa fa-check"></i></div>
-                                <div class="requirement-text">{{ __('Les colonnes doivent correspondre aux champs de l\'application') }}</div>
-                            </div>
-                            
-                            <div class="requirement-item">
-                                <div class="requirement-icon"><i class="fa fa-check"></i></div>
-                                <div class="requirement-text">{{ __('Taille maximale: 10 MB par fichier') }}</div>
-                            </div>
-                        </div>
-                        
-                        <div class="info-note">
-                            <p><i class="fa fa-lightbulb-o mr-1"></i> {{ __('Astuce: Assurez-vous que vos fichiers CSV sont encodés en UTF-8.') }}</p>
-                        </div>
-                    </div>
-                </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card border-primary">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title">Importation intelligente (recommandée)</h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">
+                    <span class="badge badge-success">Nouveau !</span> Importez plusieurs types de données en une seule fois à partir d'un ou plusieurs fichiers CSV.
+                </p>
+                <p class="text-muted">
+                    Le système reconnaît automatiquement les données et établit les bonnes relations entre elles. 
+                    Par exemple, vous pouvez importer des clients, des projets, des tâches et des factures en même temps.
+                </p>
+                <ul class="list-group mb-3">
+                    <li class="list-group-item">
+                        <i class="fa fa-check text-success"></i> Importe plusieurs types de données en même temps
+                    </li>
+                    <li class="list-group-item">
+                        <i class="fa fa-check text-success"></i> Conserve les relations entre les entités
+                    </li>
+                    <li class="list-group-item">
+                        <i class="fa fa-check text-success"></i> Détecte automatiquement le type de données
+                    </li>
+                </ul>
+                <a href="{{ route('imports.dynamic') }}" class="btn btn-outline-primary btn-lg btn-block">
+                    <i class="fa fa-magic"></i> Utiliser l'importation intelligente
+                </a>
             </div>
         </div>
     </div>
 </div>
+
+@if(Session::has('import_report'))
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header {{ Session::has('success') ? 'bg-success text-white' : 'bg-danger text-white' }}">
+                <h5 class="card-title">Rapport d'importation</h5>
+            </div>
+            <div class="card-body">
+                @if(Session::has('success'))
+                    <div class="alert alert-success">
+                        {{ Session::get('success') }}
+                    </div>
+                @endif
+                
+                @if(Session::has('error'))
+                    <div class="alert alert-danger">
+                        {{ Session::get('error') }}
+                    </div>
+                @endif
+                
+                @php
+                    $report = Session::get('import_report');
+                @endphp
+                
+                @if(isset($report['files_processed']) && count($report['files_processed']) > 0)
+                    <h6>Fichiers traités :</h6>
+                    <ul class="list-group mb-3">
+                        @foreach($report['files_processed'] as $file)
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                {{ $file['filename'] }}
+                                <span class="badge badge-primary badge-pill">{{ $file['rows_processed'] }} lignes</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+                
+                @if(isset($report['created_entities']) && count($report['created_entities']) > 0)
+                    <h6>Entités créées :</h6>
+                    <ul class="list-group mb-3">
+                        @foreach($report['created_entities'] as $entity => $count)
+                            @if($count > 0)
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    {{ ucfirst($entity) }}
+                                    <span class="badge badge-success badge-pill">{{ $count }}</span>
+                                </li>
+                            @endif
+                        @endforeach
+                    </ul>
+                @endif
+                
+                @if(isset($report['errors']) && count($report['errors']) > 0)
+                    <h6>Erreurs :</h6>
+                    <div class="alert alert-danger">
+                        <ul>
+                            @foreach($report['errors'] as $error)
+                                <li>{{ $error['message'] }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+                
+                @if(isset($report['execution_time']))
+                    <p class="text-muted">
+                        Durée de l'importation : {{ $report['execution_time'] }} secondes
+                    </p>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
 @stop
 
 @push('scripts')

@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Ramsey\Uuid\Uuid;
 
-class ImportController extends Controller
+class ImportDynamiqueController extends Controller
 {
     /**
      * Liste des tables supportées pour l'importation
@@ -277,7 +277,7 @@ class ImportController extends Controller
                 $successMessage .= ' (' . implode(', ', $entityDetails) . ')';
             }
             
-            return redirect()->route('imports.index')
+            return redirect()->route('imports.dynamic')
                 ->with('success', $successMessage)
                 ->with('import_report', $report);
                 
@@ -683,9 +683,14 @@ class ImportController extends Controller
             
             // Si le client existe déjà, on le récupère
             $clientName = $data['client_name'];
-            $existingClient = Client::whereHas('primaryContact', function ($query) use ($clientName) {
-                $query->where('name', $clientName);
-            })->first();
+            
+            // Remplacer la requête whereHas par une approche plus directe
+            $existingClient = null;
+            $existingContact = \App\Models\Contact::where('name', $clientName)->where('is_primary', 1)->first();
+            
+            if ($existingContact && $existingContact->client_id) {
+                $existingClient = Client::find($existingContact->client_id);
+            }
             
             if ($existingClient) {
                 $insertedIds['clients'][$clientName] = $existingClient->id;
@@ -1169,6 +1174,8 @@ class ImportController extends Controller
             try {
                 // Utiliser products_price s'il existe, sinon utiliser un prix par défaut
                 $price = $data['products_price'] ?? 0;
+                // Multiplier le prix par 100 pour le convertir en centimes
+                $price = $price * 100;
                 $this->validatePrice($price, 'products_price', 'produit', $row);
                 
                 // Préparer les données du produit
@@ -1563,6 +1570,8 @@ class ImportController extends Controller
         
         // Vérifier que le prix et la quantité sont valides
         $price = $data['prix'] ?? 0;
+        // Multiplier le prix par 100 pour le convertir en centimes
+        $price = $price * 100;
         $this->validatePrice($price, 'prix', 'ligne de facture', $row);
         
         $quantity = $data['quantite'] ?? 0;

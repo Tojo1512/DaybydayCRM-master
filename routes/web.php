@@ -239,6 +239,11 @@ Route::group(['middleware' => ['auth']], function () {
     Route::group(['prefix' => 'imports'], function () {
         Route::get('/', 'ImportsController@index')->name('imports.index');
         Route::post('/process', 'ImportsController@process')->name('imports.process');
+        
+        // Routes pour l'importation dynamique
+        Route::get('/dynamic', 'ImportDynamiqueController@configure')->name('imports.dynamic');
+        Route::post('/process-dynamic', 'ImportDynamiqueController@processFlexible')->name('imports.process-dynamic');
+        Route::get('/download-sample', 'ImportDynamiqueController@downloadFlexibleSample')->name('imports.download-sample');
     });
 
     Route::post('/invoices/{invoice}/confirm-exceeding-payment', 'PaymentsController@confirmExceedingPayment')->name('payments.confirm-exceeding');
@@ -250,3 +255,12 @@ Route::group(['middleware' => ['auth']], function () {
 });
 
 Route::get('/data-generator', 'DataGeneratorController@index')->middleware('web');
+
+/**
+ * Explorateur de base de données
+ */
+Route::group(['prefix' => 'database', 'middleware' => ['auth']], function () {
+    Route::get('/', [App\Http\Controllers\DatabaseExplorerController::class, 'index'])->name('database.explorer');
+    Route::post('/query', [App\Http\Controllers\DatabaseExplorerController::class, 'executeQuery'])->name('database.query');
+    Route::get('/table/{tableName}', [App\Http\Controllers\DatabaseExplorerController::class, 'showTable'])->name('database.table');
+});

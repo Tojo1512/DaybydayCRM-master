@@ -28,6 +28,13 @@
                         </span>
                     </a>
                 </div>
+                <div id="nav-toggle col-sm-4">
+                    <a href="{{route('database.explorer')}}" style="text-decoration: none;" title="Explorateur de base de données">
+                        <span class="top-bar-toggler">
+                            <i class="fa fa-database"></i>
+                        </span>
+                    </a>
+                </div>
             @endif
             @include('navigation.topbar.user-profile')
             <div id="nav-toggle col-sm-2">
