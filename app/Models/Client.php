@@ -109,7 +109,7 @@ class Client extends Model
 
     public function primaryContact()
     {
-        return $this->contacts()->where('is_primary', 1)->first();
+        return $this->contacts()->where('is_primary', 1);
     }
 
     public function getprimaryContactAttribute()
@@ -133,5 +133,57 @@ class Client extends Model
     public function getSearchableFields(): array
     {
         return $this->searchableFields;
+    }
+
+    /**
+     * Renvoie la relation associée à ce client.
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\Relation
+     */
+    public function getRelated()
+    {
+        // Renvoyer une relation au lieu de l'instance elle-même
+        return $this->contacts();
+    }
+    
+    /**
+     * Crée une requête pour vérifier l'existence d'une relation.
+     * Cette méthode est requise pour les requêtes "whereHas" d'Eloquent.
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param \Illuminate\Database\Eloquent\Builder $parentQuery
+     * @param array|string $columns
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function getRelationExistenceQuery(\Illuminate\Database\Eloquent\Builder $query, \Illuminate\Database\Eloquent\Builder $parentQuery, $columns = ['*'])
+    {
+        return $query->select($columns)->whereColumn(
+            $this->getQualifiedKeyName(), '=', $parentQuery->getModel()->getTable().'.'.$this->getForeignKey()
+        );
+    }
+    
+    /**
+     * Crée une requête pour compter l'existence d'une relation.
+     * Cette méthode est requise pour les requêtes "has" d'Eloquent avec un opérateur de comparaison.
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param \Illuminate\Database\Eloquent\Builder $parentQuery
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function getRelationExistenceCountQuery(\Illuminate\Database\Eloquent\Builder $query, \Illuminate\Database\Eloquent\Builder $parentQuery)
+    {
+        return $this->getRelationExistenceQuery(
+            $query, $parentQuery, new \Illuminate\Database\Query\Expression('count(*)')
+        );
+    }
+    
+    /**
+     * Crée une nouvelle instance de requête sans charger les relations.
+     *
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function newQueryWithoutRelationships()
+    {
+        return $this->newQuery();
     }
 }

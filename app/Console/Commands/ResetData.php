@@ -127,7 +127,7 @@ class ResetData extends Command
         $allExistingTables = [];
         
         // Tables à exclure (tables système ou à préserver)
-        $excludedTables = ['migrations'];
+        $excludedTables = ['migrations', 'clients'];
         
         // Convertir la structure de résultat en tableau simple
         foreach ($existingTables as $tableObj) {
@@ -205,7 +205,7 @@ class ResetData extends Command
     private function truncateSpecificTables($tables)
     {
         // Tables à exclure (tables système)
-        $excludedTables = ['migrations'];
+        $excludedTables = ['migrations', 'clients'];
         
         // Filtrer les tables demandées pour exclure les tables système
         $tablesToProcess = array_filter($tables, function($table) use ($excludedTables) {
@@ -213,7 +213,7 @@ class ResetData extends Command
         });
         
         if (count($tablesToProcess) !== count($tables)) {
-            $this->warn("Certaines tables système ont été automatiquement exclues de la réinitialisation.");
+            $this->warn("Certaines tables système ou protégées ont été automatiquement exclues de la réinitialisation.");
         }
         
         // Récupérer toutes les tables existantes dans la base de données

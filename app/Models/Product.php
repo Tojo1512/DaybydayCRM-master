@@ -10,6 +10,23 @@ class Product extends Model
     protected $appends = ['divided_price'];
     protected $hidden=['id'];
     
+    /**
+     * Les attributs qui sont assignables en masse.
+     *
+     * @var array
+     */
+    protected $fillable = [
+        'name',
+        'external_id',
+        'description',
+        'price',
+        'number',
+        'default_type',
+        'archived',
+        'integration_type',
+        'integration_id'
+    ];
+    
     public function getRouteKeyName()
     {
         return 'external_id';

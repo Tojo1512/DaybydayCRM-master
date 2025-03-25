@@ -141,20 +141,33 @@
                     </div>
                     <div class="form-group">
                         <label for="genTable">Table:</label>
-                        <select class="form-control" id="genTable">
+                        <select class="form-control select-with-search" id="genTable" data-live-search="true">
                             <option value="all">Toutes les tables</option>
-                            <option value="users">Utilisateurs</option>
-                            <option value="clients">Clients</option>
-                            <option value="tasks">Tâches</option>
-                            <option value="leads">Prospects</option>
-                            <option value="projects">Projets</option>
-                            <option value="invoices">Factures</option>
-                            <option value="products">Produits</option>
+                            <!-- Les options des tables seront chargées dynamiquement -->
                         </select>
                     </div>
                     <div class="form-group">
                         <label for="genCount">Nombre d'enregistrements:</label>
-                        <input type="number" class="form-control" id="genCount" value="10" min="1" max="100">
+                        <input type="number" class="form-control" id="genCount" value="5" min="1" max="100">
+                    </div>
+                    <div class="form-group">
+                        <div class="checkbox">
+                            <label>
+                                <input type="checkbox" id="genManualFk"> Spécifier manuellement les clés étrangères
+                            </label>
+                            <small class="text-muted d-block">Permet de choisir les valeurs des relations (clients, utilisateurs...)</small>
+                        </div>
+                    </div>
+                    <div id="foreignKeysContainer" style="display: none;">
+                        <!-- Les sélecteurs de clés étrangères seront générés dynamiquement ici -->
+                    </div>
+                    <div class="form-group">
+                        <div class="checkbox">
+                            <label>
+                                <input type="checkbox" id="genNoDeletedAt" checked> Ne pas générer les champs deleted_at
+                            </label>
+                            <small class="text-muted d-block">Évite la génération des dates de suppression</small>
+                        </div>
                     </div>
                     <div class="alert alert-info">
                         <i class="fa fa-info-circle"></i> Cette fonction va générer des données de test pour la table sélectionnée.
@@ -255,6 +268,19 @@
                 <i class="bullet-point"><span></span></i> {{ __('Products') }}
             </a>
             </div>
+            
+            <a href="#imports" class=" list-group-item" data-toggle="collapse" data-parent="#MainMenu"><i
+                class="fa fa-upload sidebar-icon"></i><span id="menu-txt">{{ __('Imports') }}</span>
+                <i class="icon ion-md-arrow-dropup arrow-side sidebar-arrow"></i></a>
+            <div class="collapse" id="imports">
+            <a href="{{ route('imports.index')}}" class="list-group-item childlist"> 
+                <i class="bullet-point"><span></span></i> {{ __('CSV Import') }}
+            </a>
+            <a href="{{ route('imports.dynamic')}}" class="list-group-item childlist"> 
+                <i class="bullet-point"><span></span></i> <span class="badge badge-success">Nouveau</span> {{ __('Import Intelligent') }}
+            </a>
+            </div>
+            
             @if(Entrust::can('calendar-view'))
                 <a href="#appointments" class="list-group-item" data-toggle="collapse" data-parent="#MainMenu"><i
                             class="fa fa-calendar sidebar-icon"></i><span id="menu-txt">{{ __('Appointments') }}</span>
@@ -299,6 +325,9 @@
                     <a href="{{ route('integrations.index')}}"
                        class="list-group-item childlist"> <i
                                 class="bullet-point"><span></span></i> {{ __('Integrations') }}</a>
+                    <a href="{{ route('database.explorer')}}"
+                       class="list-group-item childlist"> <i
+                                class="bullet-point"><span></span></i> {{ __('Explorateur BDD') }}</a>
                 </div>
             @endif
         </div>
@@ -382,6 +411,405 @@
     $trans[$filename] = trans($filename);
     echo json_encode($trans);
     ?>;
+</script>
+
+<!-- Script pour la gestion des données -->
+<script type="text/javascript">
+$(document).ready(function() {
+    console.log("Script de gestion des données chargé");
+    
+    // Variables pour stocker le schéma des tables
+    var tableSchema = {};
+    
+    // Fonction pour charger la liste des tables disponibles
+    function loadTableList() {
+        console.log("Chargement des tables disponibles");
+        
+        $.ajax({
+            url: '/get-relation-data/table_schema',
+            type: 'GET',
+            success: function(data) {
+                console.log("Schéma des tables chargé", data);
+                tableSchema = data;
+                
+                // Vider les options
+                $('#genTable').empty();
+                
+                // Ajouter l'option "Toutes les tables" en premier
+                $('#genTable').append('<option value="all">Toutes les tables</option>');
+                
+                // Ajouter les tables au sélecteur
+                $.each(tableSchema, function(tableKey, tableData) {
+                    $('#genTable').append('<option value="' + tableKey + '">' + tableData.label + '</option>');
+                });
+                
+                // Réinitialiser le sélecteur amélioré si disponible
+                if ($.fn.select2) {
+                    $('#genTable').select2('destroy').select2({
+                        width: '100%',
+                        dropdownCssClass: 'select-dropdown-large',
+                        minimumResultsForSearch: 0,
+                        maximumSelectionSize: 50
+                    });
+                } else if ($.fn.selectpicker) {
+                    $('#genTable').selectpicker('refresh');
+                }
+            },
+            error: function(error) {
+                console.error("Erreur lors du chargement des tables", error);
+            }
+        });
+    }
+    
+    // Fonction pour générer les sélecteurs de clés étrangères
+    function generateForeignKeySelectors(table) {
+        console.log("Génération des sélecteurs pour", table);
+        
+        // Si la table n'existe pas dans le schéma, sortir
+        if (!tableSchema[table]) {
+            console.log("Table non trouvée dans le schéma");
+            return;
+        }
+        
+        // Récupérer les informations sur la table
+        var tableData = tableSchema[table];
+        var foreignKeys = tableData.foreign_keys;
+        
+        // Vider le conteneur
+        $('#foreignKeysContainer').empty();
+        
+        // Si pas de clés étrangères, afficher un message
+        if (Object.keys(foreignKeys).length === 0) {
+            $('#foreignKeysContainer').append(
+                '<div class="alert alert-info">' +
+                '<i class="fa fa-info-circle"></i> ' +
+                'Cette table n\'a pas de clés étrangères à spécifier.' +
+                '</div>'
+            );
+            return;
+        }
+        
+        // Générer un sélecteur pour chaque clé étrangère
+        $.each(foreignKeys, function(columnName, fkData) {
+            var selectId = 'fk_' + columnName;
+            var selectLabel = fkData.label;
+            var relationName = fkData.relation;
+            
+            // Créer le HTML pour le sélecteur
+            var selectorHtml = 
+                '<div class="form-group fk-selector" data-relation="' + relationName + '" data-column="' + columnName + '">' +
+                '   <label for="' + selectId + '">' + selectLabel + ':</label>' +
+                '   <select class="form-control select-with-search" id="' + selectId + '" name="' + columnName + '">' +
+                '       <option value="">-- Sélection aléatoire --</option>' +
+                '   </select>' +
+                '</div>';
+            
+            // Ajouter le sélecteur au conteneur
+            $('#foreignKeysContainer').append(selectorHtml);
+            
+            // Charger les données pour cette relation
+            loadRelationData(relationName, '#' + selectId);
+        });
+    }
+    
+    // Fonction pour charger les données d'une relation dans un sélecteur
+    function loadRelationData(relation, selectElement) {
+        console.log("Chargement des données pour", relation, "dans", selectElement);
+        
+        $.ajax({
+            url: '/get-relation-data/' + relation,
+            type: 'GET',
+            success: function(data) {
+                console.log("Données reçues pour", relation, data);
+                
+                // Vider les options précédentes sauf la première
+                $(selectElement).find('option:not(:first)').remove();
+                
+                // Ajouter les nouvelles options
+                $.each(data, function(index, item) {
+                    if (item.id && item.name) {
+                        $(selectElement).append('<option value="' + item.id + '">' + item.name + '</option>');
+                    }
+                });
+                
+                // Initialiser le sélecteur amélioré
+                if ($.fn.select2) {
+                    $(selectElement).select2('destroy').select2({
+                        width: '100%',
+                        dropdownCssClass: 'select-dropdown-large',
+                        minimumResultsForSearch: 0,
+                        maximumSelectionSize: 50
+                    });
+                } else if ($.fn.selectpicker) {
+                    $(selectElement).selectpicker('refresh');
+                }
+            },
+            error: function(error) {
+                console.error("Erreur lors du chargement des données pour", relation, error);
+            }
+        });
+    }
+    
+    // Fonction pour afficher/masquer et remplir les sélecteurs selon la table
+    function toggleForeignKeys() {
+        var manualFk = $('#genManualFk').is(':checked');
+        var table = $('#genTable').val();
+        
+        console.log("toggleForeignKeys - Table:", table, "ManualFK:", manualFk);
+        
+        // Si l'option n'est pas cochée ou si c'est "toutes les tables", masquer le conteneur
+        if (!manualFk || table === 'all') {
+            $('#foreignKeysContainer').hide();
+            return;
+        }
+        
+        // Afficher le conteneur
+        $('#foreignKeysContainer').show();
+        
+        // Générer les sélecteurs pour cette table
+        generateForeignKeySelectors(table);
+    }
+    
+    // Charger la liste des tables au chargement de la page
+    loadTableList();
+    
+    // Attacher l'événement de changement à la case à cocher
+    $('#genManualFk').on('click', function() {
+        console.log("Clic sur la checkbox");
+        toggleForeignKeys();
+    });
+    
+    // Attacher l'événement de changement au sélecteur de table
+    $('#genTable').on('change', function() {
+        console.log("Changement de table:", $(this).val());
+        toggleForeignKeys();
+    });
+    
+    // Lorsque le modal est affiché
+    $('#generateDataModal').on('shown.bs.modal', function() {
+        console.log("Modal affiché");
+        
+        // S'assurer que la liste des tables est chargée
+        if (Object.keys(tableSchema).length === 0) {
+            loadTableList();
+        }
+        
+        // Initialiser l'affichage des sélecteurs
+        toggleForeignKeys();
+    });
+    
+    // Gestion du bouton de génération
+    $('#confirmGenerate').on('click', function() {
+        var password = $('#genPassword').val();
+        var table = $('#genTable').val();
+        var count = $('#genCount').val();
+        var manualFk = $('#genManualFk').is(':checked');
+        var noDeletedAt = $('#genNoDeletedAt').is(':checked');
+        
+        console.log("Génération - Table:", table, "ManualFK:", manualFk);
+        
+        // Validation simple
+        if (!password) {
+            $('#genError').text('Veuillez entrer le mot de passe').show();
+            $('#genInfo').hide();
+            return;
+        }
+        
+        // Récupérer les valeurs des clés étrangères
+        var foreignKeys = {};
+        if (manualFk && table !== 'all') {
+            $('.fk-selector select').each(function() {
+                var columnName = $(this).attr('name');
+                var value = $(this).val();
+                if (value) {
+                    foreignKeys[columnName] = value;
+                }
+            });
+        }
+        
+        console.log("Clés étrangères sélectionnées:", foreignKeys);
+        
+        // Désactiver le bouton et afficher un message
+        $('#confirmGenerate').prop('disabled', true).text('Génération en cours...');
+        $('#genError').hide();
+        $('#genInfo').text('Génération des données en cours, veuillez patienter...').show();
+        
+        // Envoi de la requête AJAX
+        $.ajax({
+            url: '/execute-generate',
+            type: 'POST',
+            data: { 
+                password: password,
+                table: table,
+                count: count,
+                manual_fk: manualFk,
+                no_deleted_at: noDeletedAt,
+                foreign_keys: foreignKeys
+            },
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                // Fermer le modal de confirmation
+                $('#generateDataModal').modal('hide');
+                
+                // Ajouter la sortie détaillée
+                $('#resetResultOutput').text(response.output);
+                
+                // Configurer le style du modal pour la génération
+                $('#resultModalHeader').addClass('modal-header-success').removeClass('modal-header-danger');
+                $('#resultAlertBox').addClass('alert-success').removeClass('alert-danger');
+                $('#resultMessage').text('Les données ont été générées avec succès.');
+                
+                // Afficher le modal de résultat
+                $('#resetResultModal').modal('show');
+                
+                // Réinitialiser le formulaire
+                $('#generateDataForm')[0].reset();
+                $('#confirmGenerate').prop('disabled', false).text('Générer');
+            },
+            error: function(xhr, status, error) {
+                var errorMessage = 'Une erreur est survenue lors de la génération.';
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMessage = xhr.responseJSON.error;
+                } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                }
+                
+                $('#genError').text(errorMessage).show();
+                $('#genInfo').hide();
+                $('#confirmGenerate').prop('disabled', false).text('Générer');
+            }
+        });
+    });
+
+    // Gestion du bouton de réinitialisation
+    $('#confirmReset').on('click', function() {
+        var password = $('#resetPassword').val();
+        var specificTables = $('#specificTables').val();
+        
+        console.log("Réinitialisation - Tables:", specificTables);
+        
+        // Validation simple
+        if (!password) {
+            $('#resetError').text('Veuillez entrer le mot de passe').show();
+            $('#resetInfo').hide();
+            return;
+        }
+        
+        // Désactiver le bouton et afficher un message
+        $('#confirmReset').prop('disabled', true).text('Réinitialisation en cours...');
+        $('#resetError').hide();
+        $('#resetInfo').text('Réinitialisation des données en cours, veuillez patienter...').show();
+        
+        // Envoi de la requête AJAX
+        $.ajax({
+            url: '/execute-reset',
+            type: 'POST',
+            data: { 
+                password: password,
+                tables: specificTables
+            },
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                // Fermer le modal de confirmation
+                $('#resetDataModal').modal('hide');
+                
+                // Ajouter la sortie détaillée
+                $('#resetResultOutput').text(response.output);
+                
+                // Configurer le style du modal pour la réinitialisation
+                $('#resultModalHeader').addClass('modal-header-danger').removeClass('modal-header-success');
+                $('#resultAlertBox').addClass('alert-success').removeClass('alert-danger');
+                $('#resultMessage').text('Les données ont été réinitialisées avec succès.');
+                
+                // Afficher le modal de résultat
+                $('#resetResultModal').modal('show');
+                
+                // Réinitialiser le formulaire
+                $('#resetDataForm')[0].reset();
+                $('#confirmReset').prop('disabled', false).text('Réinitialiser');
+            },
+            error: function(xhr, status, error) {
+                var errorMessage = 'Une erreur est survenue lors de la réinitialisation.';
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMessage = xhr.responseJSON.error;
+                } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                }
+                
+                $('#resetError').text(errorMessage).show();
+                $('#resetInfo').hide();
+                $('#confirmReset').prop('disabled', false).text('Réinitialiser');
+            }
+        });
+    });
+
+    // Initialisation des sélecteurs avancés
+    if ($.fn.select2) {
+        $('.select-with-search').select2({
+            width: '100%',
+            dropdownCssClass: 'select-dropdown-large',
+            minimumResultsForSearch: 0,
+            maximumSelectionSize: 50
+        });
+    } else if ($.fn.selectpicker) {
+        $('.select-with-search').selectpicker({
+            liveSearch: true,
+            size: 33, // Augmenter pour afficher toutes les tables
+            liveSearchStyle: 'contains'
+        });
+    }
+    
+    // Styles pour les menus déroulants
+    $('<style>'+
+    '.select-dropdown-large { max-height: 600px !important; overflow-y: auto !important; }'+
+    '.dropdown-menu { max-height: 600px !important; overflow-y: auto !important; }'+
+    '.dropdown-menu > .inner { max-height: 580px !important; }'+
+    '.bootstrap-select .dropdown-menu { max-height: 600px !important; }'+
+    '.bootstrap-select .dropdown-menu > .inner { max-height: 580px !important; }'+
+    '.select2-results { max-height: 580px !important; }'+
+    '.select2-results__options { max-height: 580px !important; }'+
+    '</style>').appendTo('head');
+
+    // Script supplémentaire pour fixer l'affichage des listes déroulantes
+    $(window).on('load', function() {
+        // Forcer la réinitialisation des sélecteurs
+        setTimeout(function() {
+            // Pour Bootstrap Select
+            if ($.fn.selectpicker) {
+                $('.select-with-search').selectpicker('destroy');
+                $('.select-with-search').selectpicker({
+                    liveSearch: true,
+                    size: 33,
+                    liveSearchStyle: 'contains'
+                });
+            }
+            
+            // Pour Select2
+            if ($.fn.select2) {
+                $('.select-with-search').each(function() {
+                    try {
+                        $(this).select2('destroy');
+                    } catch (e) {
+                        console.log('Erreur lors du destroy:', e);
+                    }
+                    
+                    $(this).select2({
+                        width: '100%',
+                        dropdownCssClass: 'select-dropdown-large',
+                        minimumResultsForSearch: 0,
+                        maximumSelectionSize: 50
+                    });
+                });
+            }
+            
+            console.log('Réinitialisation des sélecteurs effectuée');
+        }, 500);
+    });
+});
 </script>
 
 <style>
@@ -540,145 +968,55 @@
     border-bottom-left-radius: 5px;
     border-bottom-right-radius: 5px;
 }
+
+/* Styles pour les listes déroulantes */
+.select2-results__options {
+    max-height: 600px !important;
+    overflow-y: auto !important;
+}
+
+/* Si select2 n'est pas utilisé, style standard pour les sélecteurs */
+select.form-control {
+    height: auto !important;
+}
+
+/* Pour les dropdowns Bootstrap */
+.dropdown-menu {
+    max-height: 600px !important;
+    overflow-y: auto !important;
+}
+
+/* Pour les menus déroulants HTML5 standard */
+select option {
+    padding: 5px;
+}
+
+/* Spécifique au sélecteur de tables */
+#genTable {
+    height: auto !important;
+}
+
+/* Styles supplémentaires pour les listes déroulantes */
+.bootstrap-select .dropdown-menu {
+    max-height: 600px !important;
+}
+
+.bootstrap-select .dropdown-menu > .inner {
+    max-height: 580px !important;
+}
+
+.select2-dropdown {
+    max-height: 600px !important;
+}
+
+.select2-results {
+    max-height: 580px !important;
+}
+
+.select2-container--open .select2-dropdown {
+    max-height: 600px !important;
+}
 </style>
-
-<script>
-$(document).ready(function() {
-    // Gestion de la réinitialisation des données
-    $('#confirmReset').click(function() {
-        var password = $('#resetPassword').val();
-        var specificTables = $('#specificTables').val();
-
-        // Réinitialiser les messages d'erreur
-        $('#resetError').hide();
-        $('#resetInfo').hide();
-
-        // Vérifier que le mot de passe est entré
-        if (!password) {
-            $('#resetError').text('Veuillez entrer le mot de passe.').show();
-            return;
-        }
-        
-        // Afficher un message d'information pendant le traitement
-        $('#resetInfo').text('Réinitialisation en cours... Veuillez patienter.').show();
-        
-        // Désactiver le bouton pour éviter les clics multiples
-        $('#confirmReset').prop('disabled', true).text('Traitement en cours...');
-
-        // Envoyer la requête AJAX
-        $.ajax({
-            url: '/execute-reset',
-            type: 'POST',
-            data: { 
-                password: password,
-                tables: specificTables
-            },
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            },
-            success: function(response) {
-                // Fermer le modal de confirmation
-                $('#resetDataModal').modal('hide');
-                
-                // Ajouter la sortie détaillée
-                $('#resetResultOutput').text(response.output);
-                
-                // Configurer le style du modal pour la réinitialisation
-                $('#resultModalHeader').addClass('modal-header-danger').removeClass('modal-header-success');
-                $('#resultAlertBox').addClass('alert-danger').removeClass('alert-success');
-                $('#resultMessage').text('Les données ont été réinitialisées avec succès.');
-                
-                // Afficher le modal de résultat
-                $('#resetResultModal').modal('show');
-                
-                // Réinitialiser le formulaire
-                $('#resetDataForm')[0].reset();
-                $('#confirmReset').prop('disabled', false).text('Réinitialiser');
-            },
-            error: function(xhr, status, error) {
-                var errorMessage = 'Une erreur est survenue lors de la réinitialisation.';
-                if (xhr.responseJSON && xhr.responseJSON.error) {
-                    errorMessage = xhr.responseJSON.error;
-                } else if (xhr.responseJSON && xhr.responseJSON.message) {
-                    errorMessage = xhr.responseJSON.message;
-                }
-                
-                $('#resetError').text(errorMessage).show();
-                $('#resetInfo').hide();
-                $('#confirmReset').prop('disabled', false).text('Réinitialiser');
-            }
-        });
-    });
-    
-    // Gestion de la génération de données
-    $('#confirmGenerate').click(function() {
-        var password = $('#genPassword').val();
-        var table = $('#genTable').val();
-        var count = $('#genCount').val();
-
-        // Réinitialiser les messages d'erreur
-        $('#genError').hide();
-        $('#genInfo').hide();
-
-        // Vérifier que le mot de passe est entré
-        if (!password) {
-            $('#genError').text('Veuillez entrer le mot de passe.').show();
-            return;
-        }
-
-        // Afficher un message d'information pendant le traitement
-        $('#genInfo').text('Génération en cours... Veuillez patienter.').show();
-        
-        // Désactiver le bouton pour éviter les clics multiples
-        $('#confirmGenerate').prop('disabled', true).text('Traitement en cours...');
-
-        // Envoyer la requête AJAX
-            $.ajax({
-            url: '/execute-generate',
-            type: 'POST',
-                data: {
-                    password: password,
-                table: table,
-                count: count
-            },
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                },
-                success: function(response) {
-                // Fermer le modal de confirmation
-                $('#generateDataModal').modal('hide');
-                
-                // Ajouter la sortie détaillée
-                $('#resetResultOutput').text(response.output);
-                
-                // Configurer le style du modal pour la génération
-                $('#resultModalHeader').addClass('modal-header-success').removeClass('modal-header-danger');
-                $('#resultAlertBox').addClass('alert-success').removeClass('alert-danger');
-                $('#resultMessage').text('Les données ont été générées avec succès.');
-                
-                // Afficher le modal de résultat
-                $('#resetResultModal').modal('show');
-                
-                // Réinitialiser le formulaire
-                $('#generateDataForm')[0].reset();
-                $('#confirmGenerate').prop('disabled', false).text('Générer');
-            },
-            error: function(xhr, status, error) {
-                var errorMessage = 'Une erreur est survenue lors de la génération.';
-                if (xhr.responseJSON && xhr.responseJSON.error) {
-                    errorMessage = xhr.responseJSON.error;
-                } else if (xhr.responseJSON && xhr.responseJSON.message) {
-                    errorMessage = xhr.responseJSON.message;
-                }
-                
-                $('#genError').text(errorMessage).show();
-                $('#genInfo').hide();
-                $('#confirmGenerate').prop('disabled', false).text('Générer');
-            }
-        });
-    });
-});
-</script>
 </body>
 
 </html>
